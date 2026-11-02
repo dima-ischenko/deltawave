@@ -1,7 +1,7 @@
 -- p_owner omitted: resolve the unqualified name, then store that schema.
 -- Exclusive session lock on (owner, target, slice). Another session gets DWA-20021.
 -- p_log_table writes each step to dwa_log. Off by default.
-create or replace function initialize(
+create or replace function dwa_initialize(
     p_target_table    text,
     p_owner           text default null,
     p_data_slice      text default 'all',
@@ -15,7 +15,7 @@ set search_path = pg_temp, :"dwa_schema", public as $$
 declare
 l_owner   text;
 l_target  text;
-l_slice   text := _norm_ident(p_data_slice, 'data_slice');
+l_slice   text := dwa_norm_ident(p_data_slice, 'data_slice');
 l_lookback    numeric := coalesce(p_lookback_hours, 0);
 l_rows    bigint;
 begin
@@ -25,9 +25,9 @@ begin
 
   select q.o_owner, q.o_table
   into l_owner, l_target
-  from _qualify_relation(p_owner, p_target_table, 'target_table') q;
+  from dwa_qualify_relation(p_owner, p_target_table, 'target_table') q;
 
-  perform _ensure_temp();
+  perform dwa_ensure_temp();
 
   insert into dwa_session_tmp (
     id, target_owner, target_table, data_slice, lookback_hours,
@@ -47,19 +47,19 @@ begin
     debug = excluded.debug,
     log_table = excluded.log_table;
 
-  perform _acquire_run_lock(l_owner, l_target, l_slice);
+  perform dwa_acquire_run_lock(l_owner, l_target, l_slice);
 
   delete from dwa_keys_tmp;
   get diagnostics l_rows = row_count;
 
   delete from dwa_batch_tmp;
 
-  perform _log(
-    'initialize',
+  perform dwa_write_log(
+    'dwa_initialize',
     l_rows,
     format(
-      'target=%s.%s slice=%s lookback_hours=%s',
-      l_owner, l_target, l_slice, l_lookback
+      'version=%s target=%s.%s slice=%s lookback_hours=%s',
+      dwa_version(), l_owner, l_target, l_slice, l_lookback
     )
   );
 end;

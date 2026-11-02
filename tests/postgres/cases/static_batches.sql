@@ -11,9 +11,9 @@ begin
     call dwa_test.add_row('inc_test_a', 'd', 4, c_t1);
     call dwa_test.add_row('inc_test_a', 'e', 5, c_t1);
     call dwa_test.capture_source('inc_test_a');
-    perform prepare_batches(p_batch_size => 2);
+    perform dwa_prepare_batches(p_batch_size => 2);
     l_step := 0;
-    while next_batch() loop
+    while dwa_next_batch() loop
         l_step := l_step + 1;
         insert into inc_test_seen (batch_no, id)
         select l_step, pk_1 from dwa_batch_tmp;
@@ -24,15 +24,15 @@ begin
             call dwa_test.eq('open tgt', dwa_test.tgt_state(), 'a:1:1,b:2:1');
             call dwa_test.eq('open wm', dwa_test.wm('inc_test_a'), null);
         end if;
-        perform finish_batch();
+        perform dwa_finish_batch();
     end loop;
     call dwa_test.eq('batches', l_step::text, '3');
     call dwa_test.eq('seen 1', dwa_test.seen(1), 'a,b');
     call dwa_test.eq('seen 2', dwa_test.seen(2), 'c,d');
     call dwa_test.eq('seen 3', dwa_test.seen(3), 'e');
-    call dwa_test.eq('batch tgt before finalize', dwa_test.tgt_state(), 'a:1:1,b:2:1,c:3:1,d:4:1,e:5:1');
-    call dwa_test.eq('batch wm before finalize', dwa_test.wm('inc_test_a'), null);
-    perform finalize();
+    call dwa_test.eq('batch tgt before dwa_finalize', dwa_test.tgt_state(), 'a:1:1,b:2:1,c:3:1,d:4:1,e:5:1');
+    call dwa_test.eq('batch wm before dwa_finalize', dwa_test.wm('inc_test_a'), null);
+    perform dwa_finalize();
     call dwa_test.eq('batch wm', dwa_test.wm('inc_test_a'), '2024-01-15 10:00:00');
     call dwa_test.pass('static_batches');
 end;

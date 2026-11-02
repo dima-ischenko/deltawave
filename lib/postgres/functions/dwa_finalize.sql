@@ -1,4 +1,4 @@
-create or replace function finalize()
+create or replace function dwa_finalize()
 returns void
 language plpgsql
 set search_path = pg_temp, :"dwa_schema", public as $$
@@ -13,7 +13,7 @@ l_moved      integer := 0;
 l_all_pk     integer := 0;
 begin
   if to_regclass('dwa_session_tmp') is null then
-    raise exception 'DWA-20001 Call initialize first';
+    raise exception 'DWA-20001 Call dwa_initialize first';
   end if;
 
   select target_owner, target_table, data_slice, batches_ready
@@ -22,18 +22,18 @@ begin
   where id = 1;
 
   if l_target is null then
-    raise exception 'DWA-20001 Call initialize first';
+    raise exception 'DWA-20001 Call dwa_initialize first';
   end if;
 
   if l_ready then
-    l_left := _unfinished();
-    l_unassigned := _unassigned();
+    l_left := dwa_unfinished();
+    l_unassigned := dwa_unassigned();
   end if;
 
   if l_left > 0
    or l_unassigned > 0 then
     raise exception
-      'DWA-20005 unfinished batches for %.% (% left). Watermark was not moved. Finish the remaining batches before calling finalize.',
+      'DWA-20005 unfinished batches for %.% (% left). Watermark was not moved. Finish the remaining batches before calling dwa_finalize.',
       l_owner, l_target, l_left;
   end if;
 
@@ -57,24 +57,24 @@ begin
 
   get diagnostics l_moved = row_count;
 
-  if _debug() then
+  if dwa_debug() then
     select count(*)::integer
     into l_all_pk
     from (
       select distinct pk_1, pk_2, pk_3
       from dwa_keys_tmp
     ) k;
-    perform _log(
-      'finalize',
+    perform dwa_write_log(
+      'dwa_finalize',
       l_moved,
       format('moved=%s distinct_pk=%s', l_moved, l_all_pk)
     );
   else
-    perform _log('finalize', l_moved, format('moved=%s', l_moved));
+    perform dwa_write_log('dwa_finalize', l_moved, format('moved=%s', l_moved));
   end if;
 
   delete from dwa_batch_tmp;
-  perform _release_run_lock(l_owner, l_target, l_slice);
+  perform dwa_release_run_lock(l_owner, l_target, l_slice);
 
   update dwa_session_tmp
   set target_owner = null,

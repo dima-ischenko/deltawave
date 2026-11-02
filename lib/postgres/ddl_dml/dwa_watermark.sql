@@ -105,7 +105,7 @@ end
 $ddl$;
 
 comment on table dwa_watermark is
-    'High-water mark of a finished run. finalize advances it and never moves it backwards.';
+    'High-water mark of a finished run. dwa_finalize advances it and never moves it backwards.';
 comment on column dwa_watermark.target_owner is
     'Schema of the target table. Defaults to the current schema when omitted.';
 comment on column dwa_watermark.source_owner is
@@ -115,4 +115,4 @@ comment on column dwa_watermark.data_slice is
 comment on column dwa_watermark.watermark is
     'Greatest source value fully applied for this target, slice and source.';
 comment on column dwa_watermark.updated_at is
-    'When finalize last wrote this row.';
+    'When dwa_finalize last wrote this row.';

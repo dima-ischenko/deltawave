@@ -1,11 +1,11 @@
 -- Batches are optional. Without them the refresh statement reads dwa_keys_tmp.
--- With them: prepare_batches, then next_batch / SQL on dwa_batch_tmp / finish_batch.
--- This function does not commit. Commit after each finish_batch to keep that
--- batch in the target, and after finalize to store the watermark. A failed
--- task repeats initialize, capture, and the batch loop. next_batch, the
--- refresh statement, and finish_batch stay in one transaction: dwa_batch_tmp
+-- With them: dwa_prepare_batches, then dwa_next_batch / SQL on dwa_batch_tmp / dwa_finish_batch.
+-- This function does not commit. Commit after each dwa_finish_batch to keep that
+-- batch in the target, and after dwa_finalize to store the watermark. A failed
+-- task repeats dwa_initialize, capture, and the batch loop. dwa_next_batch, the
+-- refresh statement, and dwa_finish_batch stay in one transaction: dwa_batch_tmp
 -- is ON COMMIT DELETE ROWS.
-create or replace function prepare_batches(
+create or replace function dwa_prepare_batches(
     p_batch_size  numeric default 5000
 )
 returns void
@@ -26,7 +26,7 @@ begin
   where id = 1;
 
   if l_target is null then
-    raise exception 'DWA-20001 Call initialize first';
+    raise exception 'DWA-20001 Call dwa_initialize first';
   end if;
   if p_batch_size is null or p_batch_size < 1 or p_batch_size <> trunc(p_batch_size) then
     raise exception 'DWA-20003 batch_size must be a positive integer';
@@ -45,9 +45,9 @@ begin
   if l_batch_no is not null then
     select exists (select 1 from dwa_batch_tmp) into l_open_rows;
     if l_open_rows then
-      raise exception 'DWA-20014 batch % is open; call finish_batch', l_batch_no;
+      raise exception 'DWA-20014 batch % is open; call dwa_finish_batch', l_batch_no;
     end if;
-    raise exception 'DWA-20019 batch % lost its keys; call initialize', l_batch_no;
+    raise exception 'DWA-20019 batch % lost its keys; call dwa_initialize', l_batch_no;
   end if;
 
   select exists (select 1 from dwa_keys_tmp) into l_has_keys;
@@ -59,7 +59,7 @@ begin
   where id = 1;
 
   if not l_has_keys then
-    perform _log('prepare_batches', 0, 'no keys, nothing to apply');
+    perform dwa_write_log('dwa_prepare_batches', 0, 'no keys, nothing to apply');
     return;
   end if;
 
@@ -87,21 +87,21 @@ begin
       raise exception 'DWA-20011 batch numbers were not assigned';
     end if;
 
-    perform _log(
-      'prepare_batches',
+    perform dwa_write_log(
+      'dwa_prepare_batches',
       l_updated,
       format('assigned batch_no batch_size=%s', p_batch_size)
     );
   else
-    perform _log(
-      'prepare_batches',
+    perform dwa_write_log(
+      'dwa_prepare_batches',
       0,
       format('batch numbers already assigned batch_size=%s', l_size)
     );
   end if;
 
-  if _unfinished() = 0 then
-    perform _log('prepare_batches', 0, 'nothing left to apply');
+  if dwa_unfinished() = 0 then
+    perform dwa_write_log('dwa_prepare_batches', 0, 'nothing left to apply');
     return;
   end if;
 end;

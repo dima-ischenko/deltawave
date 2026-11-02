@@ -1,7 +1,7 @@
 -- Open keys are recalculated every run (tcf debt on unclosed loans: date_to is null).
 -- A soft delete is a tombstone whose watermark moves; the refresh drops the target row.
 -- Stale watermarks on open keys must not pull dwa_watermark backwards.
--- Refresh reads dwa_batch_tmp only. PostgreSQL does not commit inside finish_batch.
+-- Refresh reads dwa_batch_tmp only. PostgreSQL does not commit inside dwa_finish_batch.
 
 create or replace function dwa_test.roll_wm()
 returns text
@@ -59,12 +59,12 @@ declare
     l_min_wm text;
     l_batches integer := 0;
 begin
-    perform initialize(
+    perform dwa_initialize(
         p_target_table => 'inc_test_debt',
         p_data_slice => 'all',
         p_lookback_hours => 0
     );
-    perform capture_delta(
+    perform dwa_capture_delta(
         p_source_table => 'inc_test_roll',
         p_sql => c_capture
     );
@@ -81,8 +81,8 @@ begin
     call dwa_test.eq(p_step || ' min wm', l_min_wm, p_min_wm);
     call dwa_test.eq(p_step || ' wm before', dwa_test.roll_wm(), p_wm_before);
 
-    perform prepare_batches(p_batch_size => p_batch_size);
-    while next_batch() loop
+    perform dwa_prepare_batches(p_batch_size => p_batch_size);
+    while dwa_next_batch() loop
         l_batches := l_batches + 1;
 
         delete from inc_test_debt d
@@ -96,11 +96,11 @@ begin
           join dwa_batch_tmp k on k.pk_1 = r.id
          where r.deleted_at is null;
 
-        perform finish_batch();
+        perform dwa_finish_batch();
     end loop;
 
     call dwa_test.eq(p_step || ' batches', l_batches::text, p_batches);
-    perform finalize();
+    perform dwa_finalize();
     call dwa_test.eq(p_step || ' debt', dwa_test.roll_debt(), p_debt);
     call dwa_test.eq(p_step || ' wm', dwa_test.roll_wm(), p_wm);
 end;

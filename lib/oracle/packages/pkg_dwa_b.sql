@@ -16,6 +16,7 @@ gv_log_table       boolean := false;
 gv_lockhandle      varchar2(128);
 gv_lockname        varchar2(128);
 
+c_version  constant varchar2(32) := '1.0.0';
 c_w_proc   constant pls_integer := 26;
 c_w_name   constant pls_integer := 28;
 c_w_date   constant pls_integer := 32;
@@ -214,6 +215,11 @@ begin
     set_lookback_hours(0);
     clear_batch_state;
 end clear_run;
+
+function version return varchar2 is
+begin
+    return c_version;
+end version;
 
 function get_proc_name(p_proc_name varchar2) return varchar2 is
 begin
@@ -719,7 +725,8 @@ begin
     i_log(
         l_proc_name,
         l_rows,
-        fmt_col('target=' || get_target_owner || '.' || get_target_table, c_w_name)
+        'version=' || c_version || ' '
+        || fmt_col('target=' || get_target_owner || '.' || get_target_table, c_w_name)
         || fmt_col('slice=' || get_data_slice, c_w_slice)
         || 'lookback_hours=' || fmt_num(get_lookback_hours)
         || ' deleted_temp=' || l_rows

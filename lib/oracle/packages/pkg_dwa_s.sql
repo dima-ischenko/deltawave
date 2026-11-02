@@ -67,4 +67,7 @@ create or replace package pkg_dwa is
   -- still unfinished, and does not roll that error back.
   procedure finalize;
 
+  -- Installed library version. Also written on the initialize log line.
+  function version return varchar2;
+
 end pkg_dwa;

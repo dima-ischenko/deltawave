@@ -9,13 +9,13 @@ Try it from [`demo/`](demo/README.md).
 
 ## API
 
-On Oracle the entry point is `pkg_dwa`. On PostgreSQL the same names are functions in the install schema (`perform` from PL/pgSQL).
+On Oracle the entry point is `pkg_dwa`. On PostgreSQL the same methods are functions with a `dwa_` prefix (`dwa_initialize`, `dwa_capture_delta`, ...) in the install schema (`perform` from PL/pgSQL).
 
 A run is `initialize` -> `capture_delta` per source -> refresh SQL -> `finalize`. Batches are optional: `prepare_batches`, then `next_batch` / refresh / `finish_batch`.
 
 ### initialize(p_target_table, p_owner, p_data_slice, p_lookback_hours, p_debug, p_log_table)
 
-Starts a run and clears `dwa_keys_tmp`. Takes an exclusive session lock on `(owner, target_table, data_slice)` so a second session cannot start the same slice. The lock survives `COMMIT` (including `finish_batch`) and is released in `finalize`, or when the session ends. Repeat `initialize` in the same session after a failure is allowed. A different `p_data_slice` of the same target can run in parallel. The target must exist and be selectable.
+Starts a run and clears `dwa_keys_tmp`. Takes an exclusive session lock on `(owner, target_table, data_slice)` so a second session cannot start the same slice. The lock survives `COMMIT` (including `finish_batch`) and is released in `finalize`, or when the session ends. Repeat `initialize` in the same session after a failure is allowed. A different `p_data_slice` of the same target can run in parallel. The target must exist and be selectable. The initialize notice includes `version=` of the installed library (Oracle: `pkg_dwa.version`, PostgreSQL: `dwa_version()`).
 
 | Parameter | Required | Default | Effect |
 | --- | --- | --- | --- |
@@ -98,7 +98,7 @@ Same names and column order on Oracle and PostgreSQL.
 | Column | Meaning |
 | --- | --- |
 | `logged_at` | Time of the step |
-| `proc_name` | `initialize`, `capture_delta`, ... (Oracle prefixes `pkg_dwa.`) |
+| `proc_name` | `dwa_initialize`, `dwa_capture_delta`, ... (Oracle: `pkg_dwa.initialize`) |
 | `target_owner`, `target_table`, `data_slice`, `batch_no` | Session state at that step |
 | `log_rows` | Row count of the step |
 | `message` | Same text as the notice / `dbms_output` line |
@@ -120,11 +120,11 @@ pkg_dwa.capture_delta(p_source_table => 'orders', p_sql => q'[
 ]');
 ```
 
-On PostgreSQL the same call is `initialize`. Cross-schema sources pass `p_owner`:
+On PostgreSQL the same call is `dwa_initialize`. Cross-schema sources pass `p_owner`:
 
 ```sql
-pkg_dwa.initialize(p_target_table => 'customer_metrics', p_owner => 'analytics');
-pkg_dwa.capture_delta(p_source_table => 'orders', p_sql => '...', p_owner => 'sales');
+dwa_initialize(p_target_table => 'customer_metrics', p_owner => 'analytics');
+dwa_capture_delta(p_source_table => 'orders', p_sql => '...', p_owner => 'sales');
 ```
 
 ## Hard deletes

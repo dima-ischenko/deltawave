@@ -1,6 +1,6 @@
 -- Load of customer_metrics for metrics_* cases.
 -- p_batch_size null = one statement on dwa_keys_tmp.
--- A positive size uses prepare_batches / dwa_batch_tmp.
+-- A positive size uses dwa_prepare_batches / dwa_batch_tmp.
 
 drop table if exists customer_metrics_inc;
 
@@ -117,9 +117,9 @@ set search_path = pg_temp, lib, public as $$
 declare
     v_change_date timestamp := clock_timestamp();
 begin
-    perform initialize(p_target_table => 'customer_metrics', p_data_slice => 'all');
+    perform dwa_initialize(p_target_table => 'customer_metrics', p_data_slice => 'all');
 
-    perform capture_delta(
+    perform dwa_capture_delta(
         p_source_table => 'customers',
         p_sql => $sql$
             select id::text as pk_1,
@@ -128,7 +128,7 @@ begin
             where updated_at > :since
         $sql$
     );
-    perform capture_delta(
+    perform dwa_capture_delta(
         p_source_table => 'orders',
         p_sql => $sql$
             select customer_id::text as pk_1,
@@ -138,7 +138,7 @@ begin
             group by customer_id
         $sql$
     );
-    perform capture_delta(
+    perform dwa_capture_delta(
         p_source_table => 'order_items',
         p_sql => $sql$
             with changed_items as (
@@ -204,11 +204,11 @@ begin
             s.last_order_id, s.cnt_completed, v_change_date
         );
 
-        perform finalize();
+        perform dwa_finalize();
     else
-        perform prepare_batches(p_batch_size => p_batch_size);
+        perform dwa_prepare_batches(p_batch_size => p_batch_size);
 
-        while next_batch() loop
+        while dwa_next_batch() loop
             merge into customer_metrics t
             using (
                 with changed as (
@@ -258,10 +258,10 @@ begin
                 s.last_order_id, s.cnt_completed, v_change_date
             );
 
-            perform finish_batch();
+            perform dwa_finish_batch();
         end loop;
 
-        perform finalize();
+        perform dwa_finalize();
     end if;
 end;
 $$;

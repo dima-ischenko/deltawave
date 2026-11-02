@@ -2,8 +2,8 @@
 -- :since is the stored watermark minus the lookback.
 -- The statement must return pk_1 and watermark. pk_2 and pk_3 are optional.
 -- p_owner defaults to the current schema. The source must exist and be selectable.
--- p_lookback_hours null takes the value given to initialize.
-create or replace function capture_delta(
+-- p_lookback_hours null takes the value given to dwa_initialize.
+create or replace function dwa_capture_delta(
     p_source_table    text,
     p_sql             text,
     p_owner           text default null,
@@ -33,7 +33,7 @@ l_min        timestamp;
 l_max        timestamp;
 begin
   if to_regclass('dwa_session_tmp') is null then
-    raise exception 'DWA-20001 Call initialize first';
+    raise exception 'DWA-20001 Call dwa_initialize first';
   end if;
 
   select target_owner, target_table, data_slice, lookback_hours, batches_ready
@@ -42,12 +42,12 @@ begin
   where id = 1;
 
   if l_target is null then
-    raise exception 'DWA-20001 Call initialize first';
+    raise exception 'DWA-20001 Call dwa_initialize first';
   end if;
 
   select q.o_owner, q.o_table
   into l_source_owner, l_source
-  from _qualify_relation(p_owner, p_source_table, 'source_table') q;
+  from dwa_qualify_relation(p_owner, p_source_table, 'source_table') q;
 
   if p_sql is null or length(p_sql) = 0 then
     raise exception 'DWA-20006 capture sql is required';
@@ -68,11 +68,11 @@ begin
   end if;
 
   if l_ready then
-    raise exception 'DWA-20013 capture_delta is closed after prepare_batches until finalize';
+    raise exception 'DWA-20013 dwa_capture_delta is closed after dwa_prepare_batches until dwa_finalize';
   end if;
 
-  if _unfinished() > 0 then
-    raise exception 'DWA-20013 capture_delta is closed after prepare_batches until finalize';
+  if dwa_unfinished() > 0 then
+    raise exception 'DWA-20013 dwa_capture_delta is closed after dwa_prepare_batches until dwa_finalize';
   end if;
 
   select max(watermark)
@@ -142,7 +142,7 @@ end;
 
   get diagnostics l_rows = row_count;
 
-  if _debug() then
+  if dwa_debug() then
     select coalesce(sum(cnt), 0),
        min(min_wm),
        max(max_wm),
@@ -157,8 +157,8 @@ end;
         and source_table = l_source
       group by pk_1, pk_2, pk_3
     ) s;
-    perform _log(
-      'capture_delta',
+    perform dwa_write_log(
+      'dwa_capture_delta',
       l_rows,
       format(
         'source=%s.%s stored=%s bound=%s inserted=%s slice_rows=%s slice_pk=%s min=%s max=%s',
@@ -167,8 +167,8 @@ end;
       )
     );
   else
-    perform _log(
-      'capture_delta',
+    perform dwa_write_log(
+      'dwa_capture_delta',
       l_rows,
       format('source=%s.%s stored=%s bound=%s', l_source_owner, l_source, l_stored, l_bound)
     );

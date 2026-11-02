@@ -1,21 +1,24 @@
 ------- functions
--- Previous argument orders would otherwise remain as overloads.
+-- Previous argument orders and unprefixed names would otherwise remain as overloads.
 drop function if exists initialize(text, text, numeric, boolean, boolean, text);
 drop function if exists initialize(text, text, numeric, boolean, text);
 drop function if exists capture_delta(text, text, text, numeric);
 drop function if exists capture_delta(text, text, numeric, text);
+drop function if exists dwa_initialize(text, text, numeric, boolean, boolean, text);
+drop function if exists dwa_capture_delta(text, text, numeric, text);
 
-\i lib/postgres/functions/_ensure_temp.sql
-\i lib/postgres/functions/_object.sql
-\i lib/postgres/functions/_debug.sql
-\i lib/postgres/functions/_log.sql
-\i lib/postgres/functions/_unfinished.sql
-\i lib/postgres/functions/_unassigned.sql
-\i lib/postgres/functions/_batch_total.sql
-\i lib/postgres/functions/_run_lock.sql
-\i lib/postgres/functions/initialize.sql
-\i lib/postgres/functions/capture_delta.sql
-\i lib/postgres/functions/prepare_batches.sql
-\i lib/postgres/functions/next_batch.sql
-\i lib/postgres/functions/finish_batch.sql
-\i lib/postgres/functions/finalize.sql
+\i lib/postgres/functions/dwa_ensure_temp.sql
+\i lib/postgres/functions/dwa_object.sql
+\i lib/postgres/functions/dwa_debug.sql
+\i lib/postgres/functions/dwa_write_log.sql
+\i lib/postgres/functions/dwa_unfinished.sql
+\i lib/postgres/functions/dwa_unassigned.sql
+\i lib/postgres/functions/dwa_batch_total.sql
+\i lib/postgres/functions/dwa_run_lock.sql
+\i lib/postgres/functions/dwa_version.sql
+\i lib/postgres/functions/dwa_initialize.sql
+\i lib/postgres/functions/dwa_capture_delta.sql
+\i lib/postgres/functions/dwa_prepare_batches.sql
+\i lib/postgres/functions/dwa_next_batch.sql
+\i lib/postgres/functions/dwa_finish_batch.sql
+\i lib/postgres/functions/dwa_finalize.sql

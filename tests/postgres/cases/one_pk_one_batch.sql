@@ -11,8 +11,8 @@ begin
     call dwa_test.add_row('inc_test_b', 'a', 1, c_t1 + interval '1 second');
     call dwa_test.add_row('inc_test_b', 'b', 2, c_t1 + interval '1 second');
     call dwa_test.capture_both();
-    perform prepare_batches(p_batch_size => 10);
-    if not next_batch() then
+    perform dwa_prepare_batches(p_batch_size => 10);
+    if not dwa_next_batch() then
         call dwa_test.fail('one pk', 'missing batch');
     end if;
     select count(*)::integer into l_rows from dwa_batch_tmp;
@@ -22,11 +22,11 @@ begin
     call dwa_test.eq('one pk batch rows', l_rows::text, '2');
     call dwa_test.eq('one pk temp rows', l_temp::text, '4');
     call dwa_test.merge_batch();
-    perform finish_batch();
-    if next_batch() then
+    perform dwa_finish_batch();
+    if dwa_next_batch() then
         call dwa_test.fail('one pk', 'second batch');
     end if;
-    perform finalize();
+    perform dwa_finalize();
     call dwa_test.eq('one pk tgt', dwa_test.tgt_state(), 'a:11:1,b:22:1');
     call dwa_test.pass('one_pk_one_batch');
 end;

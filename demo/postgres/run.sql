@@ -11,12 +11,12 @@ do $run$
 declare
     v_change_date timestamp := clock_timestamp();
 begin
-    perform initialize(
+    perform dwa_initialize(
         p_target_table => 'customer_metrics',
         p_data_slice => 'all'
     );
 
-    perform capture_delta(
+    perform dwa_capture_delta(
         p_source_table => 'customers',
         p_sql => $sql$
             select id::text as pk_1,
@@ -26,7 +26,7 @@ begin
         $sql$
     );
 
-    perform capture_delta(
+    perform dwa_capture_delta(
         p_source_table => 'orders',
         p_sql => $sql$
             select customer_id::text as pk_1,
@@ -37,7 +37,7 @@ begin
         $sql$
     );
 
-    perform capture_delta(
+    perform dwa_capture_delta(
         p_source_table => 'order_items',
         p_sql => $sql$
             with changed_items as (
@@ -53,9 +53,9 @@ begin
         $sql$
     );
 
-    perform prepare_batches(p_batch_size => 5000);
+    perform dwa_prepare_batches(p_batch_size => 5000);
 
-    while next_batch() loop
+    while dwa_next_batch() loop
         merge into customer_metrics t
         using (
             with changed as (
@@ -105,9 +105,9 @@ begin
             s.last_order_id, s.cnt_completed, v_change_date
         );
 
-        perform finish_batch();
+        perform dwa_finish_batch();
     end loop;
 
-    perform finalize();
+    perform dwa_finalize();
 end;
 $run$;

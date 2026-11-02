@@ -13,7 +13,7 @@ begin
     call dwa_test.add_row('inc_test_b', 'c', 4, c_t1 + interval '1 second');
     call dwa_test.capture_both();
     call dwa_test.merge_all();
-    perform finalize();
+    perform dwa_finalize();
     l_wm_a := dwa_test.wm('inc_test_a');
     l_wm_b := dwa_test.wm('inc_test_b');
     delete from inc_test_expect;
@@ -23,14 +23,14 @@ begin
     delete from dwa_watermark where target_table = 'inc_test_tgt';
     commit;
 
-    perform initialize(p_target_table => 'inc_test_tgt', p_data_slice => 'all', p_lookback_hours => 0);
+    perform dwa_initialize(p_target_table => 'inc_test_tgt', p_data_slice => 'all', p_lookback_hours => 0);
     call dwa_test.capture_both();
-    perform prepare_batches(p_batch_size => 1);
-    while next_batch() loop
+    perform dwa_prepare_batches(p_batch_size => 1);
+    while dwa_next_batch() loop
         call dwa_test.merge_batch();
-        perform finish_batch();
+        perform dwa_finish_batch();
     end loop;
-    perform finalize();
+    perform dwa_finalize();
 
     select count(*)::integer
     into l_diff

@@ -9,16 +9,16 @@ do $run$
 declare
     v_change_date timestamp := clock_timestamp();
 begin
-    perform initialize(p_target_table => 'customer_metrics', p_data_slice => 'all');
+    perform dwa_initialize(p_target_table => 'customer_metrics', p_data_slice => 'all');
 
-    perform capture_delta(p_source_table => 'customers', p_sql => $sql$
+    perform dwa_capture_delta(p_source_table => 'customers', p_sql => $sql$
         select id::text as pk_1,
                updated_at as watermark
         from customers
         where updated_at > :since
     $sql$);
 
-    perform capture_delta(p_source_table => 'orders', p_sql => $sql$
+    perform dwa_capture_delta(p_source_table => 'orders', p_sql => $sql$
         select customer_id::text as pk_1,
                max(updated_at) as watermark
         from orders
@@ -26,7 +26,7 @@ begin
         group by customer_id
     $sql$);
 
-    perform capture_delta(p_source_table => 'order_items', p_sql => $sql$
+    perform dwa_capture_delta(p_source_table => 'order_items', p_sql => $sql$
         with changed_items as (
             select order_id, updated_at
             from order_items
@@ -39,9 +39,9 @@ begin
         group by o.customer_id
     $sql$);
 
-    perform prepare_batches(p_batch_size => 5000);
+    perform dwa_prepare_batches(p_batch_size => 5000);
 
-    while next_batch() loop
+    while dwa_next_batch() loop
         merge into customer_metrics t
         using (
             with changed as (
@@ -91,16 +91,16 @@ begin
             s.last_order_id, s.cnt_completed, v_change_date
         );
 
-        perform finish_batch();
+        perform dwa_finish_batch();
     end loop;
 
-    perform finalize();
+    perform dwa_finalize();
 end;
 $run$;
 ```
 
 The same script is `demo/postgres/run.sql`. See [`demo/README.md`](../../demo/README.md).
 
-The functions do not commit. Commit after each `finish_batch` and after `finalize`. A rollback of `initialize` drops the session temp tables. The run lock is session-scoped and survives that rollback until `finalize` or disconnect.
+The functions do not commit. Commit after each `dwa_finish_batch` and after `dwa_finalize`. A rollback of `dwa_initialize` drops the session temp tables. The run lock is session-scoped and survives that rollback until `dwa_finalize` or disconnect.
 
-On Greenplum 7 the same [deploy](deploy.md) is used. Pass `p_merged` to `finish_batch` when the log should show the refresh row count.
+On Greenplum 7 the same [deploy](deploy.md) is used. Pass `p_merged` to `dwa_finish_batch` when the log should show the refresh row count.

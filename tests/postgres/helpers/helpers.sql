@@ -46,7 +46,7 @@ create or replace procedure dwa_test.reset()
 language plpgsql as $$
 begin
     set local search_path = pg_temp, lib, public;
-    perform initialize(p_target_table => 'inc_test_tgt', p_data_slice => 'all', p_lookback_hours => 0);
+    perform dwa_initialize(p_target_table => 'inc_test_tgt', p_data_slice => 'all', p_lookback_hours => 0);
     delete from dwa_keys_tmp;
     delete from dwa_batch_tmp;
     delete from dwa_log;
@@ -76,7 +76,7 @@ $$;
 create or replace procedure dwa_test.capture_source(p_table text)
 language plpgsql as $$
 begin
-    perform capture_delta(
+    perform dwa_capture_delta(
         p_source_table => p_table,
         p_sql => format(
             'select id as pk_1, updated_at as watermark from %I where updated_at > :since',
@@ -264,14 +264,14 @@ begin
     call dwa_test.eq(l_name || ' tgt sum', l_sum::bigint::text, p_rows::text);
     call dwa_test.eq(l_name || ' tgt touch', l_tmin::bigint::text || ':' || l_tmax::bigint::text, '1:1');
 
-    perform finalize();
+    perform dwa_finalize();
     call dwa_test.eq(l_name || ' wm', dwa_test.wm('inc_test_a'), '2024-01-15 10:00:00');
 
-    perform initialize(p_target_table => 'inc_test_tgt', p_data_slice => 'all', p_lookback_hours => 0);
+    perform dwa_initialize(p_target_table => 'inc_test_tgt', p_data_slice => 'all', p_lookback_hours => 0);
     call dwa_test.capture_source('inc_test_a');
     call dwa_test.eq(l_name || ' second keys', dwa_test.key_count(), '0');
     call dwa_test.merge_all();
-    perform finalize();
+    perform dwa_finalize();
     select count(*) into l_cnt from inc_test_tgt;
     call dwa_test.eq(l_name || ' second tgt count', l_cnt::text, p_rows::text);
 
@@ -280,11 +280,11 @@ begin
         updated_at = c_t2
     where id in ('1', (p_rows / 2)::text, p_rows::text);
 
-    perform initialize(p_target_table => 'inc_test_tgt', p_data_slice => 'all', p_lookback_hours => 0);
+    perform dwa_initialize(p_target_table => 'inc_test_tgt', p_data_slice => 'all', p_lookback_hours => 0);
     call dwa_test.capture_source('inc_test_a');
     call dwa_test.eq(l_name || ' delta keys', dwa_test.key_count(), '3');
     call dwa_test.merge_all();
-    perform finalize();
+    perform dwa_finalize();
 
     select count(*), sum(amount), min(touch), max(touch)
     into l_cnt, l_sum, l_tmin, l_tmax

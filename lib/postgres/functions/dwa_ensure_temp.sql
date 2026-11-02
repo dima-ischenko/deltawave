@@ -1,4 +1,4 @@
-create or replace function _ensure_temp()
+create or replace function dwa_ensure_temp()
 returns void
 language plpgsql
 set search_path = pg_temp, :"dwa_schema", public as $$

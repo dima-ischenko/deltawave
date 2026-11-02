@@ -1,6 +1,6 @@
 -- Marks the open batch complete. Does not commit.
 -- Pass p_merged when the log should show the refresh row count.
-create or replace function finish_batch(p_merged bigint default null)
+create or replace function dwa_finish_batch(p_merged bigint default null)
 returns void
 language plpgsql
 set search_path = pg_temp, :"dwa_schema", public as $$
@@ -15,10 +15,10 @@ begin
   where id = 1;
 
   if l_target is null then
-    raise exception 'DWA-20001 Call initialize first';
+    raise exception 'DWA-20001 Call dwa_initialize first';
   end if;
   if l_batch_no is null then
-    raise exception 'DWA-20017 No open batch; call next_batch';
+    raise exception 'DWA-20017 No open batch; call dwa_next_batch';
   end if;
 
   update dwa_keys_tmp
@@ -37,8 +37,8 @@ begin
   set batch_no = null
   where id = 1;
 
-  perform _log(
-    'finish_batch',
+  perform dwa_write_log(
+    'dwa_finish_batch',
     coalesce(p_merged, l_marked),
     format(
       'batch %s marked=%s merged=%s',
