@@ -15,7 +15,7 @@ set search_path = pg_temp, :"dwa_schema", public as $$
 declare
 l_owner   text;
 l_target  text;
-l_slice   text := dwa_norm_ident(p_data_slice, 'data_slice');
+l_slice   text := _dwa_norm_ident(p_data_slice, 'data_slice');
 l_lookback    numeric := coalesce(p_lookback_hours, 0);
 l_rows    bigint;
 begin
@@ -25,9 +25,9 @@ begin
 
   select q.o_owner, q.o_table
   into l_owner, l_target
-  from dwa_qualify_relation(p_owner, p_target_table, 'target_table') q;
+  from _dwa_qualify_relation(p_owner, p_target_table, 'target_table') q;
 
-  perform dwa_ensure_temp();
+  perform _dwa_ensure_temp();
 
   insert into dwa_session_tmp (
     id, target_owner, target_table, data_slice, lookback_hours,
@@ -47,14 +47,14 @@ begin
     debug = excluded.debug,
     log_table = excluded.log_table;
 
-  perform dwa_acquire_run_lock(l_owner, l_target, l_slice);
+  perform _dwa_acquire_run_lock(l_owner, l_target, l_slice);
 
   delete from dwa_keys_tmp;
   get diagnostics l_rows = row_count;
 
   delete from dwa_batch_tmp;
 
-  perform dwa_write_log(
+  perform _dwa_write_log(
     'dwa_initialize',
     l_rows,
     format(

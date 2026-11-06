@@ -1,5 +1,5 @@
 -- These read the session's temporary tables, which do not exist until dwa_initialize.
-create or replace function dwa_unfinished()
+create or replace function _dwa_unfinished()
 returns integer
 language plpgsql stable
 set search_path = pg_temp, :"dwa_schema", public as $$

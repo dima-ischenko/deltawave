@@ -59,7 +59,7 @@ begin
   where id = 1;
 
   if not l_has_keys then
-    perform dwa_write_log('dwa_prepare_batches', 0, 'no keys, nothing to apply');
+    perform _dwa_write_log('dwa_prepare_batches', 0, 'no keys, nothing to apply');
     return;
   end if;
 
@@ -87,21 +87,21 @@ begin
       raise exception 'DWA-20011 batch numbers were not assigned';
     end if;
 
-    perform dwa_write_log(
+    perform _dwa_write_log(
       'dwa_prepare_batches',
       l_updated,
       format('assigned batch_no batch_size=%s', p_batch_size)
     );
   else
-    perform dwa_write_log(
+    perform _dwa_write_log(
       'dwa_prepare_batches',
       0,
       format('batch numbers already assigned batch_size=%s', l_size)
     );
   end if;
 
-  if dwa_unfinished() = 0 then
-    perform dwa_write_log('dwa_prepare_batches', 0, 'nothing left to apply');
+  if _dwa_unfinished() = 0 then
+    perform _dwa_write_log('dwa_prepare_batches', 0, 'nothing left to apply');
     return;
   end if;
 end;

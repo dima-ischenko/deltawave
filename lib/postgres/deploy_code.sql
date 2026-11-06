@@ -1,12 +1,4 @@
 ------- functions
--- Previous argument orders and unprefixed names would otherwise remain as overloads.
-drop function if exists initialize(text, text, numeric, boolean, boolean, text);
-drop function if exists initialize(text, text, numeric, boolean, text);
-drop function if exists capture_delta(text, text, text, numeric);
-drop function if exists capture_delta(text, text, numeric, text);
-drop function if exists dwa_initialize(text, text, numeric, boolean, boolean, text);
-drop function if exists dwa_capture_delta(text, text, numeric, text);
-
 \i lib/postgres/functions/dwa_ensure_temp.sql
 \i lib/postgres/functions/dwa_object.sql
 \i lib/postgres/functions/dwa_debug.sql

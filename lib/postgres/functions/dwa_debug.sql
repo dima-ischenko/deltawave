@@ -1,4 +1,4 @@
-create or replace function dwa_debug()
+create or replace function _dwa_debug()
 returns boolean
 language plpgsql stable
 set search_path = pg_temp, :"dwa_schema", public as $$

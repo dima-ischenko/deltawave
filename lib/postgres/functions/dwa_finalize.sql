@@ -26,8 +26,8 @@ begin
   end if;
 
   if l_ready then
-    l_left := dwa_unfinished();
-    l_unassigned := dwa_unassigned();
+    l_left := _dwa_unfinished();
+    l_unassigned := _dwa_unassigned();
   end if;
 
   if l_left > 0
@@ -57,24 +57,24 @@ begin
 
   get diagnostics l_moved = row_count;
 
-  if dwa_debug() then
+  if _dwa_debug() then
     select count(*)::integer
     into l_all_pk
     from (
       select distinct pk_1, pk_2, pk_3
       from dwa_keys_tmp
     ) k;
-    perform dwa_write_log(
+    perform _dwa_write_log(
       'dwa_finalize',
       l_moved,
       format('moved=%s distinct_pk=%s', l_moved, l_all_pk)
     );
   else
-    perform dwa_write_log('dwa_finalize', l_moved, format('moved=%s', l_moved));
+    perform _dwa_write_log('dwa_finalize', l_moved, format('moved=%s', l_moved));
   end if;
 
   delete from dwa_batch_tmp;
-  perform dwa_release_run_lock(l_owner, l_target, l_slice);
+  perform _dwa_release_run_lock(l_owner, l_target, l_slice);
 
   update dwa_session_tmp
   set target_owner = null,

@@ -1,4 +1,4 @@
-create or replace function dwa_batch_total()
+create or replace function _dwa_batch_total()
 returns integer
 language plpgsql stable
 set search_path = pg_temp, :"dwa_schema", public as $$

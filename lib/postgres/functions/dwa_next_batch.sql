@@ -40,7 +40,7 @@ begin
    and batch_done = 0;
 
   if l_next is null then
-    if dwa_unassigned() > 0 then
+    if _dwa_unassigned() > 0 then
       raise exception 'DWA-20011 batch numbers are missing; call dwa_prepare_batches';
     end if;
 
@@ -48,7 +48,7 @@ begin
     set batch_no = null
     where id = 1;
     delete from dwa_batch_tmp;
-    perform dwa_write_log('dwa_next_batch', 0, 'nothing left to apply');
+    perform _dwa_write_log('dwa_next_batch', 0, 'nothing left to apply');
     return false;
   end if;
 
@@ -65,7 +65,7 @@ begin
   end if;
 
   update dwa_session_tmp set batch_no = l_next where id = 1;
-  perform dwa_write_log(
+  perform _dwa_write_log(
     'dwa_next_batch',
     l_keys,
     format('batch %s opened', l_next)

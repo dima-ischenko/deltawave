@@ -4,7 +4,7 @@
 -- PostgreSQL has no named advisory locks. The name is the same string Oracle
 -- passes to DBMS_LOCK.ALLOCATE_UNIQUE: 'DWA|' || owner || '.' || target || '|' || slice.
 -- 4478785 is 0x00445741 ('DWA'); objid is hashtext of that name.
-create or replace function dwa_acquire_run_lock(p_owner text, p_target text, p_slice text)
+create or replace function _dwa_acquire_run_lock(p_owner text, p_target text, p_slice text)
 returns void
 language plpgsql
 set search_path = pg_catalog, :"dwa_schema" as $$
@@ -24,7 +24,7 @@ begin
       and classid::integer = c_ns
       and objid::integer = l_id
   ) then
-    perform dwa_write_log('dwa_initialize', 0, 'lock already held name=' || l_name);
+    perform _dwa_write_log('dwa_initialize', 0, 'lock already held name=' || l_name);
     return;
   end if;
 
@@ -39,21 +39,21 @@ begin
       and objid::integer is distinct from l_id
   loop
     perform pg_advisory_unlock(c_ns, l_old);
-    perform dwa_write_log('dwa_initialize', 0, 'lock released previous');
+    perform _dwa_write_log('dwa_initialize', 0, 'lock released previous');
   end loop;
 
   if not pg_try_advisory_lock(c_ns, l_id) then
-    perform dwa_write_log('dwa_initialize', 0, 'lock busy name=' || l_name);
+    perform _dwa_write_log('dwa_initialize', 0, 'lock busy name=' || l_name);
     raise exception
       'DWA-20021 another run is active for %.% / %',
       p_owner, p_target, p_slice;
   end if;
 
-  perform dwa_write_log('dwa_initialize', 0, 'lock acquired name=' || l_name);
+  perform _dwa_write_log('dwa_initialize', 0, 'lock acquired name=' || l_name);
 end;
 $$;
 
-create or replace function dwa_release_run_lock(p_owner text, p_target text, p_slice text)
+create or replace function _dwa_release_run_lock(p_owner text, p_target text, p_slice text)
 returns void
 language plpgsql
 set search_path = pg_catalog, :"dwa_schema" as $$
@@ -62,7 +62,7 @@ c_ns   constant integer := 4478785;
 l_name text := 'DWA|' || p_owner || '.' || p_target || '|' || p_slice;
 begin
   if pg_advisory_unlock(c_ns, hashtext(l_name)) then
-    perform dwa_write_log('dwa_finalize', 0, 'lock released name=' || l_name);
+    perform _dwa_write_log('dwa_finalize', 0, 'lock released name=' || l_name);
   end if;
 end;
 $$;

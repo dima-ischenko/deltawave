@@ -1,5 +1,5 @@
 -- Unqualified identifier. Owner is a separate argument.
-create or replace function dwa_norm_ident(p_name text, p_label text)
+create or replace function _dwa_norm_ident(p_name text, p_label text)
 returns text
 language plpgsql
 set search_path = pg_catalog, :"dwa_schema" as $$
@@ -26,7 +26,7 @@ end;
 $$;
 
 -- The relation must be visible and selectable by the caller.
-create or replace function dwa_assert_relation(p_owner text, p_table text)
+create or replace function _dwa_assert_relation(p_owner text, p_table text)
 returns void
 language plpgsql
 set search_path = pg_catalog, :"dwa_schema" as $$
@@ -50,7 +50,7 @@ $$;
 -- When p_owner is set, require that schema. When omitted, resolve the
 -- unqualified name on the install schema / public. pg_temp is left out
 -- so a leftover session table cannot steal the owner of a permanent one.
-create or replace function dwa_qualify_relation(
+create or replace function _dwa_qualify_relation(
     p_owner text,
     p_table text,
     p_label text,
@@ -63,11 +63,11 @@ declare
 l_reg  regclass;
 l_trim text := lower(trim(p_owner));
 begin
-  o_table := dwa_norm_ident(p_table, p_label);
+  o_table := _dwa_norm_ident(p_table, p_label);
 
   if l_trim is not null and length(l_trim) > 0 then
-    o_owner := dwa_norm_ident(l_trim, 'owner');
-    perform dwa_assert_relation(o_owner, o_table);
+    o_owner := _dwa_norm_ident(l_trim, 'owner');
+    perform _dwa_assert_relation(o_owner, o_table);
     return;
   end if;
 

@@ -37,7 +37,7 @@ begin
   set batch_no = null
   where id = 1;
 
-  perform dwa_write_log(
+  perform _dwa_write_log(
     'dwa_finish_batch',
     coalesce(p_merged, l_marked),
     format(

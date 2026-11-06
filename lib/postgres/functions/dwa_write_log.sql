@@ -1,4 +1,4 @@
-create or replace function dwa_write_log(
+create or replace function _dwa_write_log(
     p_proc text,
     p_rows numeric,
     p_text text default null

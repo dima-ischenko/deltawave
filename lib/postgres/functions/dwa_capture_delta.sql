@@ -47,7 +47,7 @@ begin
 
   select q.o_owner, q.o_table
   into l_source_owner, l_source
-  from dwa_qualify_relation(p_owner, p_source_table, 'source_table') q;
+  from _dwa_qualify_relation(p_owner, p_source_table, 'source_table') q;
 
   if p_sql is null or length(p_sql) = 0 then
     raise exception 'DWA-20006 capture sql is required';
@@ -71,7 +71,7 @@ begin
     raise exception 'DWA-20013 dwa_capture_delta is closed after dwa_prepare_batches until dwa_finalize';
   end if;
 
-  if dwa_unfinished() > 0 then
+  if _dwa_unfinished() > 0 then
     raise exception 'DWA-20013 dwa_capture_delta is closed after dwa_prepare_batches until dwa_finalize';
   end if;
 
@@ -142,7 +142,7 @@ end;
 
   get diagnostics l_rows = row_count;
 
-  if dwa_debug() then
+  if _dwa_debug() then
     select coalesce(sum(cnt), 0),
        min(min_wm),
        max(max_wm),
@@ -157,7 +157,7 @@ end;
         and source_table = l_source
       group by pk_1, pk_2, pk_3
     ) s;
-    perform dwa_write_log(
+    perform _dwa_write_log(
       'dwa_capture_delta',
       l_rows,
       format(
@@ -167,7 +167,7 @@ end;
       )
     );
   else
-    perform dwa_write_log(
+    perform _dwa_write_log(
       'dwa_capture_delta',
       l_rows,
       format('source=%s.%s stored=%s bound=%s', l_source_owner, l_source, l_stored, l_bound)
