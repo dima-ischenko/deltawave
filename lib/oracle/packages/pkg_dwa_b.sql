@@ -16,7 +16,7 @@ gv_log_table       boolean := false;
 gv_lockhandle      varchar2(128);
 gv_lockname        varchar2(128);
 
-c_version  constant varchar2(32) := '1.0.2';
+c_version  constant varchar2(32) := '1.0.3';
 c_w_proc   constant pls_integer := 26;
 c_w_name   constant pls_integer := 28;
 c_w_date   constant pls_integer := 32;
