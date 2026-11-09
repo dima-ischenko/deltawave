@@ -2,9 +2,10 @@ create or replace procedure dwa_test.same_result()
 language plpgsql as $$
 declare
     c_t1   constant timestamp := timestamp '2024-01-15 10:00:00';
-    l_wm_a text;
-    l_wm_b text;
-    l_diff integer;
+    l_wm_a   text;
+    l_wm_b   text;
+    l_diff   integer;
+    l_merged bigint;
 begin
     call dwa_test.reset();
     call dwa_test.add_row('inc_test_a', 'a', 10, c_t1);
@@ -27,8 +28,8 @@ begin
     call dwa_test.capture_both();
     perform dwa_prepare_batches(p_batch_size => 1);
     while dwa_next_batch() loop
-        call dwa_test.merge_batch();
-        perform dwa_finish_batch();
+        l_merged := dwa_test.merge_batch();
+        perform dwa_finish_batch(l_merged);
     end loop;
     perform dwa_finalize();
 

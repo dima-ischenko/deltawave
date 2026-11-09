@@ -7,6 +7,7 @@ Without batches, one refresh reads `dwa_keys_tmp`. The table holds only the curr
 ```sql
 declare
     l_change_date date := sysdate;
+    l_merged      number;
 begin
     pkg_dwa.initialize(p_target_table => 'customer_metrics', p_data_slice => 'all');
 
@@ -90,7 +91,8 @@ begin
                 s.last_order_id, s.cnt_completed, l_change_date
             );
 
-        pkg_dwa.finish_batch;
+        l_merged := sql%rowcount;
+        pkg_dwa.finish_batch(l_merged);
     end loop;
 
     pkg_dwa.finalize;
@@ -100,6 +102,6 @@ end;
 
 The same script is `demo/oracle/run.sql`. See [`demo/README.md`](../../demo/README.md).
 
-`finish_batch` commits when `p_commit_batch` is true (the default). `finalize` does not. Commit after `finalize` to store the watermark. `p_commit_batch => false` keeps the whole run in one transaction.
+`finish_batch` commits when `p_commit_batch` is true (the default). `finalize` does not. Commit after `finalize` to store the watermark. `p_commit_batch => false` keeps the whole run in one transaction. Capture `sql%rowcount` of the refresh into a variable and pass that; it is not visible inside `finish_batch`.
 
 `initialize` holds a `DBMS_LOCK` on the owner, target and slice until `finalize`. Grant it once: [deploy.md](deploy.md).

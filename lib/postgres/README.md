@@ -8,6 +8,7 @@ Without batches, one refresh reads `dwa_keys_tmp`. The table holds only the curr
 do $run$
 declare
     v_change_date timestamp := clock_timestamp();
+    v_merged bigint;
 begin
     perform dwa_initialize(p_target_table => 'customer_metrics', p_data_slice => 'all');
 
@@ -91,7 +92,8 @@ begin
             s.last_order_id, s.cnt_completed, v_change_date
         );
 
-        perform dwa_finish_batch();
+        get diagnostics v_merged = row_count;
+        perform dwa_finish_batch(v_merged);
     end loop;
 
     perform dwa_finalize();
@@ -101,6 +103,6 @@ $run$;
 
 The same script is `demo/postgres/run.sql`. See [`demo/README.md`](../../demo/README.md).
 
-The functions do not commit. Commit after each `dwa_finish_batch` and after `dwa_finalize`. A rollback of `dwa_initialize` drops the session temp tables. The run lock is session-scoped and survives that rollback until `dwa_finalize` or disconnect.
+The functions do not commit. Commit after each `dwa_finish_batch` and after `dwa_finalize`. A rollback of `dwa_initialize` drops the session temp tables. The run lock is session-scoped and survives that rollback until `dwa_finalize` or disconnect. Pass `GET DIAGNOSTICS ROW_COUNT` of the refresh; it is not visible inside `dwa_finish_batch`.
 
-On Greenplum 7 the same [deploy](deploy.md) is used. Pass `p_merged` to `dwa_finish_batch` when the log should show the refresh row count.
+On Greenplum 7 the same [deploy](deploy.md) is used. After `UPDATE`/`INSERT` capture `GET DIAGNOSTICS` and pass the sum as `p_merged`.

@@ -58,6 +58,7 @@ declare
         l_keys    varchar2(4000);
         l_min_wm  varchar2(40);
         l_batches number := 0;
+        l_merged  number;
     begin
         pkg_dwa.initialize(
             p_target_table   => 'inc_test_debt',
@@ -96,7 +97,8 @@ declare
               join dwa_batch_tmp k on k.pk_1 = r.id
              where r.deleted_at is null;
 
-            pkg_dwa.finish_batch;
+            l_merged := sql%rowcount;
+            pkg_dwa.finish_batch(l_merged);
         end loop;
 
         pkg_dwa_test.eq(p_step || ' batches', to_char(l_batches), p_batches);

@@ -1,6 +1,7 @@
 declare
-    l_rows number;
-    l_temp number;
+    l_rows   number;
+    l_temp   number;
+    l_merged number;
 begin
     pkg_dwa_test.reset;
     pkg_dwa_test.add_row('inc_test_a', 'a', 10, pkg_dwa_test.c_t1);
@@ -22,8 +23,8 @@ begin
     pkg_dwa_test.eq('one pk keys', pkg_dwa_test.ids_in_batch, 'a,b');
     pkg_dwa_test.eq('one pk batch rows', to_char(l_rows), '2');
     pkg_dwa_test.eq('one pk temp rows', to_char(l_temp), '4');
-    pkg_dwa_test.merge_batch;
-    pkg_dwa.finish_batch;
+    l_merged := pkg_dwa_test.merge_batch;
+    pkg_dwa.finish_batch(l_merged);
 
     if pkg_dwa.next_batch then
         pkg_dwa_test.fail('one pk', 'second batch');

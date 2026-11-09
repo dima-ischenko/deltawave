@@ -1,3 +1,5 @@
+declare
+    l_merged number;
 begin
     pkg_dwa_test.reset;
     pkg_dwa_test.add_row('inc_test_a', 'a', 1, pkg_dwa_test.c_t1);
@@ -20,12 +22,12 @@ begin
             end if;
     end;
 
-    pkg_dwa_test.merge_batch;
-    pkg_dwa.finish_batch;
+    l_merged := pkg_dwa_test.merge_batch;
+    pkg_dwa.finish_batch(l_merged);
 
     while pkg_dwa.next_batch loop
-        pkg_dwa_test.merge_batch;
-        pkg_dwa.finish_batch;
+        l_merged := pkg_dwa_test.merge_batch;
+        pkg_dwa.finish_batch(l_merged);
     end loop;
 
     pkg_dwa.finalize;
@@ -53,12 +55,12 @@ begin
             end if;
     end;
 
-    pkg_dwa_test.merge_batch;
-    pkg_dwa.finish_batch;
+    l_merged := pkg_dwa_test.merge_batch;
+    pkg_dwa.finish_batch(l_merged);
 
     while pkg_dwa.next_batch loop
-        pkg_dwa_test.merge_batch;
-        pkg_dwa.finish_batch;
+        l_merged := pkg_dwa_test.merge_batch;
+        pkg_dwa.finish_batch(l_merged);
     end loop;
 
     pkg_dwa.finalize;
@@ -99,8 +101,8 @@ begin
     end;
 
     while pkg_dwa.next_batch loop
-        pkg_dwa_test.merge_batch;
-        pkg_dwa.finish_batch;
+        l_merged := pkg_dwa_test.merge_batch;
+        pkg_dwa.finish_batch(l_merged);
     end loop;
 
     pkg_dwa.finalize;

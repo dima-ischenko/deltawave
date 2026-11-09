@@ -1,4 +1,5 @@
 declare
+    l_merged number;
 begin
     pkg_dwa_test.reset;
     pkg_dwa_test.add_row('inc_test_a', 'a', 1, pkg_dwa_test.c_t1);
@@ -11,15 +12,15 @@ begin
         pkg_dwa_test.fail('rerun', 'missing first batch');
     end if;
 
-    pkg_dwa_test.merge_batch;
-    pkg_dwa.finish_batch;
+    l_merged := pkg_dwa_test.merge_batch;
+    pkg_dwa.finish_batch(l_merged);
     pkg_dwa_test.eq('rerun after first', pkg_dwa_test.tgt_state, 'a:1:1,b:2:1');
 
     if not pkg_dwa.next_batch then
         pkg_dwa_test.fail('rerun', 'missing second batch');
     end if;
 
-    pkg_dwa_test.merge_batch;
+    l_merged := pkg_dwa_test.merge_batch;
     rollback;
 
     pkg_dwa_test.eq('rerun rolled back', pkg_dwa_test.tgt_state, 'a:1:1,b:2:1');
@@ -42,8 +43,8 @@ begin
     pkg_dwa.prepare_batches(p_batch_size => 2);
 
     while pkg_dwa.next_batch loop
-        pkg_dwa_test.merge_batch;
-        pkg_dwa.finish_batch;
+        l_merged := pkg_dwa_test.merge_batch;
+        pkg_dwa.finish_batch(l_merged);
     end loop;
 
     pkg_dwa_test.eq('rerun wm before finalize', pkg_dwa_test.wm('inc_test_a'), to_char(null));

@@ -15,7 +15,7 @@ create or replace package pkg_dwa_test is
     procedure capture_source(p_table varchar2);
     procedure capture_both;
     procedure merge_all;
-    procedure merge_batch;
+    function merge_batch return number;
     function key_count return varchar2;
     function wm(p_source varchar2) return varchar2;
     function tgt_state return varchar2;
@@ -120,7 +120,7 @@ create or replace package body pkg_dwa_test is
             values (s.id, s.amount, 1);
     end merge_all;
 
-    procedure merge_batch is
+    function merge_batch return number is
     begin
         merge into inc_test_tgt t
         using (
@@ -137,6 +137,7 @@ create or replace package body pkg_dwa_test is
                 t.touch = t.touch + 1
         when not matched then insert (id, amount, touch)
             values (s.id, s.amount, 1);
+        return sql%rowcount;
     end merge_batch;
 
     function key_count return varchar2 is

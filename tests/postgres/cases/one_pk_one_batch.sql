@@ -2,8 +2,9 @@ create or replace procedure dwa_test.one_pk_one_batch()
 language plpgsql as $$
 declare
     c_t1   constant timestamp := timestamp '2024-01-15 10:00:00';
-    l_rows integer;
-    l_temp integer;
+    l_rows   integer;
+    l_temp   integer;
+    l_merged bigint;
 begin
     call dwa_test.reset();
     call dwa_test.add_row('inc_test_a', 'a', 10, c_t1);
@@ -21,8 +22,8 @@ begin
     call dwa_test.eq('one pk keys', dwa_test.ids_in_batch(), 'a,b');
     call dwa_test.eq('one pk batch rows', l_rows::text, '2');
     call dwa_test.eq('one pk temp rows', l_temp::text, '4');
-    call dwa_test.merge_batch();
-    perform dwa_finish_batch();
+    l_merged := dwa_test.merge_batch();
+    perform dwa_finish_batch(l_merged);
     if dwa_next_batch() then
         call dwa_test.fail('one pk', 'second batch');
     end if;

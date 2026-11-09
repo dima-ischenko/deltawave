@@ -1,8 +1,9 @@
 create or replace procedure dwa_test.static_batches()
 language plpgsql as $$
 declare
-    c_t1   constant timestamp := timestamp '2024-01-15 10:00:00';
-    l_step integer;
+    c_t1     constant timestamp := timestamp '2024-01-15 10:00:00';
+    l_step   integer;
+    l_merged bigint;
 begin
     call dwa_test.reset();
     call dwa_test.add_row('inc_test_a', 'a', 1, c_t1);
@@ -17,14 +18,14 @@ begin
         l_step := l_step + 1;
         insert into inc_test_seen (batch_no, id)
         select l_step, pk_1 from dwa_batch_tmp;
-        call dwa_test.merge_batch();
+        l_merged := dwa_test.merge_batch();
         if l_step = 1 then
             call dwa_test.eq('open batch', l_step::text, '1');
             call dwa_test.eq('open keys', dwa_test.ids_in_batch(), 'a,b');
             call dwa_test.eq('open tgt', dwa_test.tgt_state(), 'a:1:1,b:2:1');
             call dwa_test.eq('open wm', dwa_test.wm('inc_test_a'), null);
         end if;
-        perform dwa_finish_batch();
+        perform dwa_finish_batch(l_merged);
     end loop;
     call dwa_test.eq('batches', l_step::text, '3');
     call dwa_test.eq('seen 1', dwa_test.seen(1), 'a,b');

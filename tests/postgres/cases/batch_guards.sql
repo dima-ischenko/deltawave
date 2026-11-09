@@ -1,7 +1,8 @@
 create or replace procedure dwa_test.batch_guards()
 language plpgsql as $$
 declare
-    c_t1 constant timestamp := timestamp '2024-01-15 10:00:00';
+    c_t1     constant timestamp := timestamp '2024-01-15 10:00:00';
+    l_merged bigint;
 begin
     call dwa_test.reset();
     call dwa_test.add_row('inc_test_a', 'a', 1, c_t1);
@@ -13,11 +14,11 @@ begin
         call dwa_test.fail('guard dwa_finalize', 'missing batch');
     end if;
     call dwa_test.expect_dwa('guard dwa_finalize', 'DWA-20005', 'select dwa_finalize()');
-    call dwa_test.merge_batch();
-    perform dwa_finish_batch();
+    l_merged := dwa_test.merge_batch();
+    perform dwa_finish_batch(l_merged);
     while dwa_next_batch() loop
-        call dwa_test.merge_batch();
-        perform dwa_finish_batch();
+        l_merged := dwa_test.merge_batch();
+        perform dwa_finish_batch(l_merged);
     end loop;
     perform dwa_finalize();
     call dwa_test.eq('guard tgt', dwa_test.tgt_state(), 'a:1:1,b:1:1,c:1:1');
@@ -31,11 +32,11 @@ begin
         call dwa_test.fail('guard next', 'missing batch');
     end if;
     call dwa_test.expect_dwa('guard next', 'DWA-20014', 'select dwa_next_batch()');
-    call dwa_test.merge_batch();
-    perform dwa_finish_batch();
+    l_merged := dwa_test.merge_batch();
+    perform dwa_finish_batch(l_merged);
     while dwa_next_batch() loop
-        call dwa_test.merge_batch();
-        perform dwa_finish_batch();
+        l_merged := dwa_test.merge_batch();
+        perform dwa_finish_batch(l_merged);
     end loop;
     perform dwa_finalize();
 
@@ -51,8 +52,8 @@ begin
         'call dwa_test.capture_source(''inc_test_a'')'
     );
     while dwa_next_batch() loop
-        call dwa_test.merge_batch();
-        perform dwa_finish_batch();
+        l_merged := dwa_test.merge_batch();
+        perform dwa_finish_batch(l_merged);
     end loop;
     perform dwa_finalize();
 

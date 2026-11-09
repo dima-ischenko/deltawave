@@ -60,8 +60,9 @@ create or replace package pkg_dwa is
 
   -- Marks the open batch complete.
   -- Commits when prepare_batches was called with p_commit_batch true.
-  -- The log line records sql%rowcount of the preceding DML, so call this immediately after it.
-  procedure finish_batch;
+  -- Capture sql%rowcount of the refresh into a variable, then pass it as p_merged.
+  -- sql%rowcount inside this procedure is not the caller's DML.
+  procedure finish_batch(p_merged number default null);
 
   -- Advances dwa_watermark from dwa_keys_tmp, releases the run lock,
   -- and clears the session. Does not commit. Refuses while a batch is

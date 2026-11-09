@@ -1,5 +1,6 @@
 -- Marks the open batch complete. Does not commit.
--- Pass p_merged when the log should show the refresh row count.
+-- Pass p_merged from the caller (GET DIAGNOSTICS ROW_COUNT of the refresh).
+-- ROW_COUNT inside this function is the batch_done update, not the caller's DML.
 create or replace function dwa_finish_batch(p_merged bigint default null)
 returns void
 language plpgsql

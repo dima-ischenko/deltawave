@@ -60,7 +60,7 @@ Marks the open batch done.
 
 | Parameter | Required | Default | Effect |
 | --- | --- | --- | --- |
-| `p_merged` | no | `null` | PostgreSQL only. Row count for the log. Oracle reads `sql%rowcount` of the preceding DML; call it immediately after the refresh. |
+| `p_merged` | no | `null` | Row count of the refresh DML, for the log. Capture it in the caller first (Oracle `sql%rowcount`, PostgreSQL `GET DIAGNOSTICS ... ROW_COUNT`), then pass the variable. Neither survives into `finish_batch` itself. |
 
 ### finalize()
 

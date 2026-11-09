@@ -128,9 +128,15 @@ begin
 end;
 $$;
 
-create or replace procedure dwa_test.merge_batch()
+drop procedure if exists dwa_test.merge_batch();
+
+create or replace function dwa_test.merge_batch()
+returns bigint
 language plpgsql
 set search_path = pg_temp, lib, public as $$
+declare
+    l_updated bigint;
+    l_inserted bigint;
 begin
     update inc_test_tgt t
     set amount = s.amount,
@@ -144,6 +150,7 @@ begin
         group by k.pk_1
     ) s
     where t.id = s.id;
+    get diagnostics l_updated = row_count;
 
     insert into inc_test_tgt (id, amount, touch)
     select s.id, s.amount, 1
@@ -158,6 +165,9 @@ begin
     where not exists (
         select 1 from inc_test_tgt t where t.id = s.id
     );
+    get diagnostics l_inserted = row_count;
+
+    return l_updated + l_inserted;
 end;
 $$;
 

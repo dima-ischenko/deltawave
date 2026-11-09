@@ -10,6 +10,7 @@
 do $run$
 declare
     v_change_date timestamp := clock_timestamp();
+    v_merged bigint;
 begin
     perform dwa_initialize(
         p_target_table => 'customer_metrics',
@@ -105,7 +106,8 @@ begin
             s.last_order_id, s.cnt_completed, v_change_date
         );
 
-        perform dwa_finish_batch();
+        get diagnostics v_merged = row_count;
+        perform dwa_finish_batch(v_merged);
     end loop;
 
     perform dwa_finalize();

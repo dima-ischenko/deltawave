@@ -58,6 +58,7 @@ declare
     l_keys text;
     l_min_wm text;
     l_batches integer := 0;
+    l_merged bigint;
 begin
     perform dwa_initialize(
         p_target_table => 'inc_test_debt',
@@ -95,8 +96,9 @@ begin
           from inc_test_roll r
           join dwa_batch_tmp k on k.pk_1 = r.id
          where r.deleted_at is null;
+        get diagnostics l_merged = row_count;
 
-        perform dwa_finish_batch();
+        perform dwa_finish_batch(l_merged);
     end loop;
 
     call dwa_test.eq(p_step || ' batches', l_batches::text, p_batches);

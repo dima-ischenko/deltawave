@@ -132,6 +132,7 @@ end seed_customer_delta;
 
 create or replace procedure run_customer_metrics(p_batch_size number default null) is
     l_change_date date := sysdate;
+    l_merged      number;
 
     procedure capture_all is
     begin
@@ -223,7 +224,7 @@ create or replace procedure run_customer_metrics(p_batch_size number default nul
             );
     end merge_keys;
 
-    procedure merge_batch is
+    function merge_batch return number is
     begin
         merge into customer_metrics t
             using (
@@ -273,6 +274,7 @@ create or replace procedure run_customer_metrics(p_batch_size number default nul
                 s.customer_id, s.min_amount, s.max_amount, s.avg_amount,
                 s.last_order_id, s.cnt_completed, l_change_date
             );
+        return sql%rowcount;
     end merge_batch;
 begin
     pkg_dwa.initialize(p_target_table => 'customer_metrics', p_data_slice => 'all');
@@ -284,8 +286,8 @@ begin
     else
         pkg_dwa.prepare_batches(p_batch_size => p_batch_size);
         while pkg_dwa.next_batch loop
-            merge_batch;
-            pkg_dwa.finish_batch;
+            l_merged := merge_batch;
+            pkg_dwa.finish_batch(l_merged);
         end loop;
         pkg_dwa.finalize;
     end if;

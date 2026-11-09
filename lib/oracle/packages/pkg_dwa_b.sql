@@ -16,7 +16,7 @@ gv_log_table       boolean := false;
 gv_lockhandle      varchar2(128);
 gv_lockname        varchar2(128);
 
-c_version  constant varchar2(32) := '1.0.3';
+c_version  constant varchar2(32) := '1.0.4';
 c_w_proc   constant pls_integer := 26;
 c_w_name   constant pls_integer := 28;
 c_w_date   constant pls_integer := 32;
@@ -924,6 +924,7 @@ procedure prepare_batches(
     l_commit_batch boolean := true;
     l_batch_size   number := p_batch_size;
     l_assigned     number := 0;
+    l_updated      number := 0;
     l_key_total    number := 0;
     l_left         number := 0;
     l_total        number := 0;
@@ -1000,13 +1001,14 @@ begin
                     t.batch_done = 0
                 where t.batch_no is null;
 
-            if sql%rowcount = 0 then
+            l_updated := sql%rowcount;
+            if l_updated = 0 then
                 raise_application_error(-20011, 'batch numbers were not assigned');
             end if;
 
             i_log(
                 l_proc_name,
-                sql%rowcount,
+                l_updated,
                 'assigned batch_no batch_size=' || l_batch_size
                 || case when l_commit_batch then ' commit_batch' else ' no_commit' end
             );
@@ -1098,12 +1100,11 @@ begin
     end;
 end next_batch;
 
-procedure finish_batch is
-    -- Still the caller's DML row count: this procedure has not executed any SQL yet.
-    l_merged    number := sql%rowcount;
+procedure finish_batch(p_merged number default null) is
     l_proc_name varchar2(64) := get_proc_name('finish_batch');
     l_batch_no  number := get_batch_no;
     l_total     number;
+    l_marked    number := 0;
 begin
     assert_ready;
 
@@ -1117,7 +1118,8 @@ begin
         where batch_no = l_batch_no
           and batch_done = 0;
 
-        if sql%rowcount = 0 then
+        l_marked := sql%rowcount;
+        if l_marked = 0 then
             raise_application_error(-20012, 'batch ' || l_batch_no || ' was not marked done');
         end if;
 
@@ -1133,14 +1135,14 @@ begin
 
         i_log(
             l_proc_name,
-            l_merged,
+            nvl(p_merged, l_marked),
             fmt_col('batch ' || l_batch_no || '/' || l_total, c_w_batch)
-            || 'merged=' || l_merged
+            || 'merged=' || nvl(to_char(p_merged), 'n/a')
             || case when get_commit_batch then ' committed' else ' uncommitted' end
         );
     exception
         when others then
-            note_failure(l_proc_name, l_merged, sqlerrm);
+            note_failure(l_proc_name, nvl(p_merged, l_marked), sqlerrm);
             raise;
     end;
 end finish_batch;

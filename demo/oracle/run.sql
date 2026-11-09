@@ -8,6 +8,7 @@ set timing on
 
 declare
     l_change_date date := sysdate;
+    l_merged      number;
 begin
     pkg_dwa.initialize(
         p_target_table => 'customer_metrics',
@@ -104,7 +105,8 @@ begin
                 s.last_order_id, s.cnt_completed, l_change_date
             );
 
-        pkg_dwa.finish_batch;
+        l_merged := sql%rowcount;
+        pkg_dwa.finish_batch(l_merged);
     end loop;
 
     pkg_dwa.finalize;

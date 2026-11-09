@@ -1,5 +1,6 @@
 declare
-    l_step number := 0;
+    l_step   number := 0;
+    l_merged number;
 begin
     pkg_dwa_test.reset;
     pkg_dwa_test.add_row('inc_test_a', 'a', 1, pkg_dwa_test.c_t1);
@@ -18,7 +19,7 @@ begin
         select l_step, pk_1
         from dwa_batch_tmp;
 
-        pkg_dwa_test.merge_batch;
+        l_merged := pkg_dwa_test.merge_batch;
 
         if l_step = 1 then
             pkg_dwa_test.eq('open batch', to_char(l_step), '1');
@@ -27,7 +28,7 @@ begin
             pkg_dwa_test.eq('open wm', pkg_dwa_test.wm('inc_test_a'), to_char(null));
         end if;
 
-        pkg_dwa.finish_batch;
+        pkg_dwa.finish_batch(l_merged);
     end loop;
 
     pkg_dwa_test.eq('batches', to_char(l_step), '3');
