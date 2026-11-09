@@ -1,4 +1,4 @@
--- Append-only log of pkg_dwa steps. Written only when initialize p_log_table is true.
+-- Written when initialize p_log_table is true.
 create table dwa_log (
     logged_at       timestamp     not null,
     proc_name       varchar2(64)  not null,
@@ -11,10 +11,10 @@ create table dwa_log (
 );
 
 comment on table dwa_log is
-    'Optional run log. initialize(..., p_log_table => true) writes a row per step in an autonomous transaction. Off by default.';
+    'Optional run log. Off by default.';
 comment on column dwa_log.target_owner is
-    'Schema of the target table at that step.';
+    'Schema of the target.';
 comment on column dwa_log.data_slice is
     'Watermark slice of the run.';
 comment on column dwa_log.message is
-    'Same text as the dbms_output line, without the timestamp prefix.';
+    'Same text as the dbms_output line.';

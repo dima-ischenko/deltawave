@@ -1,5 +1,4 @@
--- One row per target owner, target, slice, source owner and source.
--- Those five columns are the key, then the stored value, then when it was written.
+-- One row per (target owner, target, slice, source owner, source).
 create table dwa_watermark (
     target_owner    varchar2(128) default lower(sys_context('USERENV', 'CURRENT_SCHEMA')) not null,
     target_table    varchar2(128) not null,
@@ -14,14 +13,14 @@ create table dwa_watermark (
 );
 
 comment on table dwa_watermark is
-    'High-water mark of a finished run. pkg_dwa.finalize advances it and never moves it backwards.';
+    'High-water mark of a finished run. Never moves backwards.';
 comment on column dwa_watermark.target_owner is
-    'Schema of the target table. Defaults to the current schema when omitted.';
+    'Schema of the target.';
 comment on column dwa_watermark.source_owner is
-    'Schema of the source table. Defaults to the current schema when omitted.';
+    'Schema of the source.';
 comment on column dwa_watermark.data_slice is
     'Independent watermark slice of this target.';
 comment on column dwa_watermark.watermark is
-    'Greatest source value fully applied for this target, slice and source.';
+    'Greatest source value fully applied.';
 comment on column dwa_watermark.updated_at is
     'When finalize last wrote this row.';

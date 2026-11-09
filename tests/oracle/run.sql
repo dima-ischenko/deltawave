@@ -1,6 +1,4 @@
--- Run the checks. tests/oracle/run.sh deploys pkg_dwa first from lib/oracle.
--- From the repository root:
--- sqlplus user/password@//host:1521/service @tests/oracle/run.sql
+-- Run the checks. tests/oracle/run.sh deploys pkg_dwa first.
 
 whenever sqlerror exit sql.sqlcode
 set serveroutput on size unlimited

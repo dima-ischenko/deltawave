@@ -42,7 +42,7 @@ create table public.inc_test_seen (
     id       text not null
 );
 
--- Open rows (closed_at is null) are recaptured every run. deleted_at is a tombstone.
+-- Open rows are recaptured every run. deleted_at is a tombstone.
 create table public.inc_test_roll (
     id         text not null,
     amount     numeric not null,

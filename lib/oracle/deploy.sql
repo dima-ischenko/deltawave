@@ -1,8 +1,4 @@
--- Deploy dwa into the current schema.
--- The calculating user must own these objects: the key tables are
--- global temporary tables, and the package keeps its state in the session.
--- Start from the repository root: @lib/oracle/... is resolved from the
--- working directory.
+-- Deploy dwa into the current schema. Start from the repository root.
 
 whenever sqlerror exit sql.sqlcode
 

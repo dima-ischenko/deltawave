@@ -1,6 +1,1 @@
--- Objects are created in the current schema. deploy.sql selects it.
--- dwa_initialize creates the temporary tables dwa_keys_tmp and dwa_batch_tmp.
--- dwa_watermark and dwa_log are permanent. dwa_initialize p_log_table writes
--- to dwa_log; it stays empty by default.
--- Session flags live in dwa_session_tmp. If the transaction that called
--- dwa_initialize is rolled back, the temporary tables go with it.
+-- Permanent objects. dwa_initialize creates the session temp tables.

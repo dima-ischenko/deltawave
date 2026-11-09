@@ -1,4 +1,4 @@
--- Slice is a watermark key, not a relation name. Digits are allowed ('1', '101').
+-- Slice key; digits are allowed.
 create or replace function _dwa_norm_slice(p_name text)
 returns text
 language plpgsql

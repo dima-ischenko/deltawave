@@ -1,6 +1,4 @@
--- When p_owner is set, require that schema. When omitted, resolve the
--- unqualified name on the install schema / public. pg_temp is left out
--- so a leftover session table cannot steal the owner of a permanent one.
+-- Resolve owner and table. Omitted p_owner uses the install schema / public.
 create or replace function _dwa_qualify_relation(
     p_owner text,
     p_table text,
@@ -22,7 +20,6 @@ begin
     return;
   end if;
 
-  -- current_schemas(false) skips the implicit pg_temp prefix.
   select lower(n.nspname), c.oid
   into o_owner, l_reg
   from pg_class c

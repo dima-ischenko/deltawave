@@ -1,10 +1,9 @@
-# A private pair of databases for dwa. Host ports are 1522 and 5434
-# so this stack can run beside another Oracle on 1521 and another Postgres on 5433.
+# Test databases. Host ports 1522 (Oracle) and 5434 (Postgres).
 #
 #   docker compose -f tests/docker/docker-compose.yml up --wait
 #
-# Oracle, after the health check:  test/test_pass@//localhost:1522/FREEPDB1
-# Postgres:                         postgresql://test_user:test_pass@localhost:5434/test_db
+# Oracle:   test/test_pass@//localhost:1522/FREEPDB1
+# Postgres: postgresql://test_user:test_pass@localhost:5434/test_db
 
 services:
   oracle:

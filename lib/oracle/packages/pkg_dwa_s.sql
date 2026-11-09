@@ -1,13 +1,6 @@
 create or replace package pkg_dwa is
 
-  -- p_owner defaults to sys_context('USERENV', 'CURRENT_SCHEMA').
-  -- The target must exist and be selectable by the caller.
-  -- p_lookback_hours moves the read bound back by N hours.
-  -- Zero uses the stored watermark. The lookback is not written to dwa_watermark.
-  -- p_data_slice is a watermark key, not a relation name. Digits are allowed via char cast('1').
-  -- Exclusive named DBMS_LOCK on (owner, target, slice). Another session gets -20021.
-  -- The lock survives commit and is released in finalize, or when the session ends.
-  -- p_log_table writes each step to dwa_log. Off by default.
+  -- Starts a run. Exclusive lock on (owner, target, slice) until finalize.
   procedure initialize(
       p_target_table    varchar2,
       p_owner           varchar2 default null,
@@ -17,12 +10,7 @@ create or replace package pkg_dwa is
       p_log_table       boolean  default false
   );
 
-  -- p_sql must contain :since. :data_slice is optional.
-  -- :since is the stored watermark minus the lookback.
-  -- The statement must return pk_1 and watermark. pk_2 and pk_3 are optional.
-  -- p_owner defaults to the current schema. The source must exist and be
-  -- selectable. Watermarks are stored per (source owner, source table).
-  -- A null p_lookback_hours takes the value given to initialize.
+  -- Inserts changed keys into dwa_keys_tmp. p_sql must contain :since and return pk_1, watermark.
   procedure capture_delta(
       p_source_table    varchar2,
       p_sql             varchar2,
@@ -30,46 +18,22 @@ create or replace package pkg_dwa is
       p_lookback_hours  number default null
   );
 
-  -- Batches are optional. The target calculation is ordinary SQL.
-  --
-  -- Without batches it reads every key from dwa_keys_tmp
-  -- and finalize is called immediately afterwards.
-  -- The table holds only the current run. Target and slice
-  -- are the values given to initialize.
-  --
-  -- With batches: prepare_batches, then the loop
-  -- next_batch / SQL against dwa_batch_tmp / finish_batch.
-  -- dwa_batch_tmp holds only the keys of the current batch.
-  -- When p_commit_batch is true, finish_batch commits that batch.
-  -- finalize does not commit and does not advance the watermark
-  -- while a batch is still unfinished. The caller commits after finalize.
-  -- A failed run is repeated from initialize. The refresh statement
-  -- has to be idempotent.
+  -- Optional. Then next_batch / refresh / finish_batch. Without it, refresh reads dwa_keys_tmp.
   procedure prepare_batches(
       p_batch_size    number  default 5000,
       p_commit_batch  boolean default true
   );
 
-  -- Returns true when a batch is open and its keys are in dwa_batch_tmp.
-  -- Returns false when no unfinished batch remains.
-  -- Calling it again while the previous batch is still open and
-  -- dwa_batch_tmp is not empty raises an error.
-  -- A commit or rollback that empties dwa_batch_tmp while a batch is open
-  -- raises an error. Call initialize and repeat the run.
+  -- True while a batch is open in dwa_batch_tmp.
   function next_batch return boolean;
 
-  -- Marks the open batch complete.
-  -- Commits when prepare_batches was called with p_commit_batch true.
-  -- Capture sql%rowcount of the refresh into a variable, then pass it as p_merged.
-  -- sql%rowcount inside this procedure is not the caller's DML.
+  -- Marks the open batch complete. Pass p_merged from the caller's refresh.
   procedure finish_batch(p_merged number default null);
 
-  -- Advances dwa_watermark from dwa_keys_tmp, releases the run lock,
-  -- and clears the session. Does not commit. Refuses while a batch is
-  -- still unfinished, and does not roll that error back.
+  -- Writes watermarks, releases the lock. Does not commit.
   procedure finalize;
 
-  -- Installed library version. Also written on the initialize log line.
+  -- Installed library version.
   function version return varchar2;
 
 end pkg_dwa;

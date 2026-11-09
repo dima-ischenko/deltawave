@@ -1,4 +1,3 @@
--- These read the session's temporary tables, which do not exist until dwa_initialize.
 create or replace function _dwa_unfinished()
 returns integer
 language plpgsql stable

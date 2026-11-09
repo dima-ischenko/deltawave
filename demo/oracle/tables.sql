@@ -1,4 +1,4 @@
--- Source tables and the target. Run this once, then seed.sql or seed_volume.sql.
+-- Source tables and the target.
 begin execute immediate 'drop table demo_numbers purge'; exception when others then if sqlcode != -942 then raise; end if; end;
 /
 begin execute immediate 'drop table demo_seed_state purge'; exception when others then if sqlcode != -942 then raise; end if; end;

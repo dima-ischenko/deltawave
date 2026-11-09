@@ -1,6 +1,4 @@
-# Local defaults match a database that is already running.
-# tests/docker/docker-compose.yml and GitHub Actions use dwa-oracle /
-# dwa-postgres; override the variables then.
+# Defaults match a local database. Override for tests/docker (dwa-oracle / dwa-postgres).
 
 ORACLE_CONTAINER ?= oracle
 ORACLE_CONNECT ?= test/test_pass@//localhost:1521/test_db

@@ -1,4 +1,4 @@
--- Unqualified identifier. Owner is a separate argument.
+-- Unqualified identifier.
 create or replace function _dwa_norm_ident(p_name text, p_label text)
 returns text
 language plpgsql

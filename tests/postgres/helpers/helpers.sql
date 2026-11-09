@@ -1,4 +1,4 @@
--- Shared fixture helpers. Cases live in tests/postgres/cases/.
+-- Shared fixture helpers.
 create schema if not exists dwa_test;
 
 create or replace procedure dwa_test.fail(p_test text, p_detail text)
@@ -28,7 +28,7 @@ begin
 end;
 $$;
 
--- p_sql is one statement that must raise DWA-xxxxx. It must not commit.
+-- p_sql is one statement that must raise DWA-xxxxx.
 create or replace procedure dwa_test.expect_dwa(p_test text, p_code text, p_sql text)
 language plpgsql as $$
 begin
@@ -242,8 +242,7 @@ language sql stable as $$
     where target_table = p_target;
 $$;
 
--- No SET clause on this procedure: a SET attribute forbids COMMIT/ROLLBACK,
--- and reset() must commit when called from here.
+-- No SET clause: it would forbid COMMIT in reset().
 create or replace procedure dwa_test.volume(p_rows integer)
 language plpgsql as $$
 declare

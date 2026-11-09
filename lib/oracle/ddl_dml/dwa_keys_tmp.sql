@@ -1,12 +1,4 @@
--- Keys to refresh. Rows survive commit and last until the session ends.
--- Target owner, target and slice of the run live in package state, not here.
--- source_owner and source_table stay: finalize advances one watermark per source.
---
--- Column order:
---   source_owner, source_table            - watermark grain within the run
---   pk_1, pk_2, pk_3                      - the business key, same order as dwa_batch_tmp
---   watermark                             - the source value of this key
---   batch_no, batch_done                  - progress, null and 0 until prepare_batches
+-- Keys of the current run. Survive commit until the session ends.
 create global temporary table dwa_keys_tmp (
     source_owner    varchar2(128) not null,
     source_table    varchar2(128) not null,
@@ -23,16 +15,16 @@ create index idx_dwa_keys_tmp_batch
     on dwa_keys_tmp (batch_no, batch_done);
 
 comment on table dwa_keys_tmp is
-    'Keys of the current run. Target and slice live in the session. A calculation without batches reads this table. prepare_batches fills batch_no.';
+    'Keys of the current run. Target and slice live in the session.';
 comment on column dwa_keys_tmp.source_owner is
-    'Schema of the source that produced this key.';
+    'Schema of the source.';
 comment on column dwa_keys_tmp.source_table is
-    'Source that produced this key. finalize keeps the greatest watermark per source owner and name.';
+    'Source that produced this key.';
 comment on column dwa_keys_tmp.pk_1 is
-    'First part of the business key. pk_2 and pk_3 are null when the key is shorter.';
+    'First part of the business key.';
 comment on column dwa_keys_tmp.watermark is
-    'Source value of this key. finalize keeps the greatest one per source.';
+    'Source value of this key.';
 comment on column dwa_keys_tmp.batch_no is
-    'Batch of a distinct (pk_1, pk_2, pk_3). The same key from several sources shares one batch. Null when batches are not used.';
+    'Batch of a distinct key. Null when batches are not used.';
 comment on column dwa_keys_tmp.batch_done is
-    '1 after finish_batch. The watermark has not moved yet.';
+    '1 after finish_batch.';

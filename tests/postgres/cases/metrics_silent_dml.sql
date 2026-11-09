@@ -1,5 +1,4 @@
--- DML that does not move updated_at, and a hard delete, must not change
--- the incremental result. A full refresh from the current source does.
+-- Silent DML and a hard delete must not change the incremental result.
 
 do $check$
 declare

@@ -37,7 +37,6 @@ c_lock_param_error constant number := 3;
 c_lock_already_own constant number := 4;
 c_lock_illegal     constant number := 5;
 
--- Session state is read and written only here.
 function get_target_owner return varchar2 is
 begin
     return gv_target_owner;
@@ -236,7 +235,7 @@ begin
     return nvl(to_char(p_value), 'null');
 end fmt_num;
 
--- rpad without truncating a value that is already wider than p_width.
+-- rpad that does not truncate.
 function fmt_col(p_text varchar2, p_width number) return varchar2 is
     l_text varchar2(4000) := nvl(p_text, 'null');
 begin
@@ -295,7 +294,7 @@ begin
     return l_name;
 end norm_ident;
 
--- Slice is a watermark key, not a relation name. Digits are allowed ('1', '101').
+-- Slice key; digits are allowed.
 function norm_slice(p_name varchar2) return varchar2 is
     l_name varchar2(64);
 begin
@@ -444,8 +443,7 @@ begin
     return l_cnt;
 end placeholder_count;
 
--- Named :since and :data_slice can appear more than once. Bind only names
--- that the statement actually contains: an unused bind raises ORA-01006.
+-- Bind only placeholders the statement contains.
 function exec_dml_named(
     p_sql          clob,
     p_since        date,
@@ -483,8 +481,7 @@ exception
         raise;
 end exec_dml_named;
 
--- True when (p_sql) exposes p_col. Parse is enough: missing columns raise
--- ORA-00904, and :since does not have to be bound. Other errors are re-raised.
+-- True when p_sql returns p_col.
 function capture_has_col(
     p_sql varchar2,
     p_col varchar2
@@ -573,9 +570,7 @@ begin
     );
 end assert_no_open_batch;
 
--- Named lock, same idea as lock_utl: ALLOCATE_UNIQUE(name) then REQUEST(handle).
--- REQUEST has no name overload. ALLOCATE_UNIQUE writes DBMS_LOCK_ALLOCATED;
--- the autonomous commit keeps that out of the caller's transaction.
+-- Named exclusive lock on (owner, target, slice).
 function run_lock_name(
     p_owner   varchar2,
     p_target  varchar2,
@@ -624,13 +619,6 @@ begin
         release_on_commit => false
     );
 
-    -- dbms_lock.request:
-    -- 0 success
-    -- 1 timeout            -- another session holds it
-    -- 2 deadlock
-    -- 3 parameter error
-    -- 4 already own lock
-    -- 5 illegal lock handle
     if l_rc not in (c_lock_success, c_lock_already_own) then
         i_log(
             l_proc,
@@ -819,7 +807,6 @@ begin
     end if;
 
     l_watermark := get_watermark(l_source_owner, l_source_table);
-    -- Date arithmetic keeps the bound as DATE. Hours are a fraction of a day.
     l_bound := l_watermark - l_lookback / 24;
 
     if not capture_has_col(l_sql, 'pk_1')

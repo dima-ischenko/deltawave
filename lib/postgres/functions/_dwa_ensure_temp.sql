@@ -12,7 +12,7 @@ begin
     l_by_pk := ' distributed by (pk_1)';
   end if;
 
-  -- Older sessions used data_segment and had no target_owner.
+  -- Drop stale session tables from older installs.
   if to_regclass('dwa_session_tmp') is not null
    and (
      exists (
@@ -61,8 +61,7 @@ begin
     alter table dwa_session_tmp add column log_table boolean not null default false;
   end if;
 
-  -- An older session may still have target_table on the keys table, or
-  -- lack source_owner. Those belong in session / a dedicated column.
+  -- Drop stale dwa_keys_tmp from older installs.
   if to_regclass('dwa_keys_tmp') is not null
    and (
      exists (

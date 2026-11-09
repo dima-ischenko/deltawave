@@ -1,6 +1,4 @@
--- p_owner omitted: resolve the unqualified name, then store that schema.
--- Exclusive session lock on (owner, target, slice). Another session gets DWA-20021.
--- p_log_table writes each step to dwa_log. Off by default.
+-- Starts a run. Exclusive lock on (owner, target, slice) until dwa_finalize.
 create or replace function dwa_initialize(
     p_target_table    text,
     p_owner           text default null,

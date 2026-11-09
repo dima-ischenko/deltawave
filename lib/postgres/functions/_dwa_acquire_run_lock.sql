@@ -1,9 +1,4 @@
--- Exclusive session lock on (owner, target, slice). Survives COMMIT (not xact-scoped).
--- Released in dwa_finalize, or when the session ends. Same-session dwa_initialize keeps it.
---
--- PostgreSQL has no named advisory locks. The name is the same string Oracle
--- passes to DBMS_LOCK.ALLOCATE_UNIQUE: 'DWA|' || owner || '.' || target || '|' || slice.
--- 4478785 is 0x00445741 ('DWA'); objid is hashtext of that name.
+-- Exclusive session lock on (owner, target, slice).
 create or replace function _dwa_acquire_run_lock(p_owner text, p_target text, p_slice text)
 returns void
 language plpgsql

@@ -1,4 +1,4 @@
--- What the last run.sql did. After seed.sql you should see 3 metrics and 3 watermarks.
+-- Result of the last run.sql.
 select (select count(*) from customers) as customers,
        (select count(*) from orders) as orders,
        (select count(*) from order_items) as order_items,

@@ -15,31 +15,31 @@ A run is `initialize` -> `capture_delta` per source -> refresh SQL -> `finalize`
 
 ### initialize(p_target_table, p_owner, p_data_slice, p_lookback_hours, p_debug, p_log_table)
 
-Starts a run and clears `dwa_keys_tmp`. Takes an exclusive session lock on `(owner, target_table, data_slice)` so a second session cannot start the same slice. The lock survives `COMMIT` (including `finish_batch`) and is released in `finalize`, or when the session ends. Repeat `initialize` in the same session after a failure is allowed. A different `p_data_slice` of the same target can run in parallel. The target must exist and be selectable. The initialize notice includes `version=` of the installed library (Oracle: `pkg_dwa.version`, PostgreSQL: `dwa_version()`).
+Starts a run and clears `dwa_keys_tmp`. Exclusive session lock on `(owner, target_table, data_slice)` until `finalize` or disconnect. The target must exist and be selectable.
 
 | Parameter | Required | Default | Effect |
 | --- | --- | --- | --- |
 | `p_target_table` | yes | - | Unqualified target being loaded. |
-| `p_owner` | no | current schema | Schema of the target. Oracle uses `sys_context('USERENV', 'CURRENT_SCHEMA')`. PostgreSQL resolves an omitted owner from the install schema / `public`. |
-| `p_data_slice` | no | `'all'` | Independent watermark slice of this target. A watermark key, not a relation name. |
+| `p_owner` | no | current schema | Schema of the target. |
+| `p_data_slice` | no | `'all'` | Independent watermark slice of this target. |
 | `p_lookback_hours` | no | `0` | Hours subtracted from the stored watermark when binding `:since`. Not written to `dwa_watermark`. |
 | `p_debug` | no | `false` | Extra diagnostic output on capture and finalize. |
-| `p_log_table` | no | `false` | Write each step to `dwa_log`. `dbms_output` / notices still print. On Oracle the insert is an autonomous transaction, so a rollback of the run keeps the log. PostgreSQL and Greenplum have no analog: the row lives in the caller's transaction. |
+| `p_log_table` | no | `false` | Write each step to `dwa_log`. On Oracle the insert is autonomous. |
 
 A second session that calls `initialize` for the same triple gets `DWA-20021` / `-20021`. A missing or inaccessible target gets `DWA-20022` / `-20022`.
 
 ### capture_delta(p_source_table, p_sql, p_owner, p_lookback_hours)
 
-Inserts changed keys into `dwa_keys_tmp`. The source must exist and be selectable. Watermarks are stored per source owner and name, so the same table name can be used from different schemas.
+Inserts changed keys into `dwa_keys_tmp`. The source must exist and be selectable. Watermarks are stored per source owner and name.
 
 | Parameter | Required | Default | Effect |
 | --- | --- | --- | --- |
 | `p_source_table` | yes | - | Unqualified source name stored with the watermark. |
-| `p_sql` | yes | - | Must return `pk_1` and `watermark`. `pk_2` and `pk_3` are optional. Must contain `:since`. `:data_slice` is optional; it is the slice given to `initialize`. |
-| `p_owner` | no | current schema | Schema of the source. Same default as `initialize`. |
+| `p_sql` | yes | - | Must return `pk_1` and `watermark`. `pk_2` and `pk_3` are optional. Must contain `:since`. `:data_slice` is optional. |
+| `p_owner` | no | current schema | Schema of the source. |
 | `p_lookback_hours` | no | `null` | Lookback for this source. `null` uses the value from `initialize`. |
 
-`:since` is the stored watermark minus the lookback. With no stored row the bound is `2000-01-01`. `:data_slice` is the slice given to `initialize`.
+`:since` is the stored watermark minus the lookback. With no stored row the bound is `2000-01-01`.
 
 ### prepare_batches(p_batch_size [, p_commit_batch])
 
@@ -52,7 +52,7 @@ Numbers distinct keys. Skip it to refresh every key from `dwa_keys_tmp` in one s
 
 ### next_batch() -> boolean
 
-Loads the next unfinished batch into `dwa_batch_tmp`. Returns true while a batch is open, false when none remain. Call `prepare_batches` first. Do not commit between `next_batch` and `finish_batch`: that empties `dwa_batch_tmp`.
+Loads the next unfinished batch into `dwa_batch_tmp`. Returns true while a batch is open, false when none remain. Call `prepare_batches` first. Do not commit between `next_batch` and `finish_batch`.
 
 ### finish_batch([p_merged])
 
@@ -60,19 +60,19 @@ Marks the open batch done.
 
 | Parameter | Required | Default | Effect |
 | --- | --- | --- | --- |
-| `p_merged` | no | `null` | Row count of the refresh DML, for the log. Capture it in the caller first (Oracle `sql%rowcount`, PostgreSQL `GET DIAGNOSTICS ... ROW_COUNT`), then pass the variable. Neither survives into `finish_batch` itself. |
+| `p_merged` | no | `null` | Row count of the refresh, for the log. Pass `sql%rowcount` / `GET DIAGNOSTICS ROW_COUNT` from the caller. |
 
 ### finalize()
 
-Writes, for each source, the greatest captured watermark. Never moves a watermark backwards. Does not commit. Errors if a batch is still unfinished; that error does not roll back. Commit after it to store the watermark.
+Writes, for each source, the greatest captured watermark. Never moves a watermark backwards. Does not commit. Errors if a batch is still unfinished. Commit after it to store the watermark.
 
 After a failure, repeat from `initialize`. The refresh SQL must be idempotent.
 
-Without batches the refresh reads `dwa_keys_tmp`. The table holds only the current run. Target and slice are the values given to `initialize`. With batches the refresh reads `dwa_batch_tmp`. A key from several sources is assigned to one batch.
+Without batches the refresh reads `dwa_keys_tmp`. With batches the refresh reads `dwa_batch_tmp`.
 
 ## Tables
 
-Same names and column order on Oracle and PostgreSQL.
+Same names on Oracle and PostgreSQL.
 
 `dwa_watermark` is permanent. One row per `(target_owner, target_table, data_slice, source_owner, source_table)`.
 
@@ -82,11 +82,11 @@ Same names and column order on Oracle and PostgreSQL.
 | `watermark` | Greatest source value fully applied |
 | `updated_at` | Time of the last `finalize` write |
 
-`dwa_keys_tmp` holds every key of the current run. Rows survive a commit and last until the session ends. Target owner, target and slice are session state, not columns.
+`dwa_keys_tmp` holds every key of the current run. Rows survive a commit and last until the session ends.
 
 | Column | Meaning |
 | --- | --- |
-| `source_owner`, `source_table` | Source that produced this key. `finalize` advances one watermark per source |
+| `source_owner`, `source_table` | Source that produced this key |
 | `pk_1`, `pk_2`, `pk_3` | Business key of the target row |
 | `watermark` | Source value of this key |
 | `batch_no`, `batch_done` | Set by `prepare_batches`. `batch_done` becomes `1` after `finish_batch` |
@@ -133,18 +133,18 @@ Not supported. A physical `DELETE` never reaches `dwa_keys_tmp`. To drop a targe
 
 ## Soft deletes
 
-Set the tombstone and a watermark column together (`deleted_at`, or `mt_sync_at` moved to the same moment) and return that column as `watermark`. The refresh deletes the target row for that key. The next run does not see it: the stored watermark is already at the delete. Clearing the flag on a row that the capture SQL also selects for another reason (an open key, below) puts the target row back. The stale source watermark on that row does not move `dwa_watermark` backwards.
+Set the tombstone and a watermark together (`deleted_at`) and return that column as `watermark`. The refresh deletes the target row. Clearing the flag puts the row back if capture still selects the key.
 
 ## Rolling keys
 
-A target that is rebuilt through the current day for rows still open (`closed_at` / `date_to` is null) must select those keys even when their source watermark is older than `:since`:
+Open rows (`closed_at` / `date_to` is null) must be selected even when their watermark is older than `:since`:
 
 ```sql
 where deleted_at is null
   and (updated_at > :since or closed_at is null)
 ```
 
-Return the row's real source watermark, not the reporting day. `finalize` stores `max(watermark)` per source and never replaces a newer stored value with an older one, so the open keys do not pull the watermark back and closed keys stay out of the next run. With batches the refresh reads `dwa_batch_tmp`: one key is one batch member, and the statement must not use the rest of `dwa_keys_tmp`.
+Return the row's real source watermark. `finalize` never moves a stored watermark backwards, so open keys do not pull it back.
 
 ## Tests
 

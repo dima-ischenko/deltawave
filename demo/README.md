@@ -2,7 +2,7 @@
 
 Scripts that load `customer_metrics` from three sources. Deploy first: [Oracle](../lib/oracle/deploy.md) or [PostgreSQL](../lib/postgres/deploy.md).
 
-`run.sql` is the incremental load. Seed scripts load source rows only; `run.sql` writes `dwa_watermark` after it computes `customer_metrics`. Start from the repository root.
+`run.sql` is the incremental load. Start from the repository root.
 
 ## Oracle
 

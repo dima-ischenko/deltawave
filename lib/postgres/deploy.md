@@ -9,7 +9,7 @@ psql "postgresql://user:password@localhost:5432/db" -v ON_ERROR_STOP=1 -f lib/po
 psql "postgresql://user:password@localhost:5432/db" -v ON_ERROR_STOP=1 -v dwa_schema=analytics -f lib/postgres/deploy.sql
 ```
 
-Put that schema on `search_path` before calling the functions. `dwa_initialize` creates the session temp tables.
+Put that schema on `search_path` before calling the functions.
 
 ```bash
 psql "postgresql://user:password@localhost:5432/db" -v ON_ERROR_STOP=1 -v dwa_schema=analytics -f lib/postgres/rollback.sql

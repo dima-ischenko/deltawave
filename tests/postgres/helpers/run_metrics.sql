@@ -1,6 +1,4 @@
 -- Load of customer_metrics for metrics_* cases.
--- p_batch_size null = one statement on dwa_keys_tmp.
--- A positive size uses dwa_prepare_batches / dwa_batch_tmp.
 
 drop table if exists customer_metrics_inc;
 

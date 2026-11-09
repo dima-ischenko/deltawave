@@ -1,7 +1,4 @@
--- Open keys are recalculated every run (tcf debt on unclosed loans: date_to is null).
--- A soft delete is a tombstone whose watermark moves; the refresh drops the target row.
--- Stale watermarks on open keys must not pull dwa_watermark backwards.
--- Refresh reads dwa_batch_tmp only, and finish_batch commits each batch.
+-- Open keys, soft-delete tombstones, and watermarks that must not move backwards.
 declare
     c_open  constant date := timestamp '2024-06-01 08:00:00';
     c_close constant date := timestamp '2024-06-02 09:00:00';
@@ -118,7 +115,7 @@ begin
     insert into inc_test_roll (id, amount, updated_at, closed_at, deleted_at)
     values ('c', 7, c_open, null, null);
 
-    -- Day 1: every open key, including ones that share a watermark.
+    -- Day 1: every open key.
     apply(
         'roll day1', date '2024-06-01', 2,
         'a,b,c', '2',
@@ -126,7 +123,7 @@ begin
         '2024-06-01 08:00:00', null, '2024-06-01 08:00:00'
     );
 
-    -- b closes. a and c are still open, so they are rebuilt for the new day.
+    -- b closes. a and c stay open.
     update inc_test_roll
        set closed_at = date '2024-06-02',
            updated_at = c_close
@@ -139,8 +136,7 @@ begin
         '2024-06-02 09:00:00', '2024-06-01 08:00:00', '2024-06-01 08:00:00'
     );
 
-    -- Nothing changed. Open keys come back with a watermark older than the stored one.
-    -- b stays on the day it closed. The watermark does not move back.
+    -- Nothing changed. Open keys must not pull the watermark back.
     apply(
         'roll open', date '2024-06-03', 1,
         'a,c', '2',
@@ -148,7 +144,7 @@ begin
         '2024-06-02 09:00:00', '2024-06-02 09:00:00', '2024-06-01 08:00:00'
     );
 
-    -- Soft delete of an open key. The tombstone is captured; the debt row goes away.
+    -- Soft delete of an open key.
     update inc_test_roll
        set deleted_at = c_del
      where id = 'a';
@@ -160,7 +156,7 @@ begin
         '2024-06-03 10:00:00', '2024-06-02 09:00:00', '2024-06-01 08:00:00'
     );
 
-    -- Next day the deleted key is not resurrected. c, still open, moves forward.
+    -- Next day the deleted key is not resurrected.
     apply(
         'roll after delete', date '2024-06-05', 1,
         'c', '1',
@@ -168,8 +164,7 @@ begin
         '2024-06-03 10:00:00', '2024-06-03 10:00:00', '2024-06-01 08:00:00'
     );
 
-    -- Clearing the tombstone without a newer updated_at: the open predicate brings a back.
-    -- Its old watermark must not pull the stored watermark back to June 1.
+    -- Clear the tombstone. a comes back; its old watermark must not move dwa_watermark back.
     update inc_test_roll
        set deleted_at = null
      where id = 'a';

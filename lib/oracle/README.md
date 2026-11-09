@@ -2,7 +2,7 @@
 
 Call `pkg_dwa` after you [deploy](deploy.md) it into the calculating user's schema. Methods and parameters: [root README](../../README.md).
 
-Without batches, one refresh reads `dwa_keys_tmp`. The table holds only the current run. With batches, each refresh reads `dwa_batch_tmp`.
+Without batches, one refresh reads `dwa_keys_tmp`. With batches, each refresh reads `dwa_batch_tmp`.
 
 ```sql
 declare
@@ -102,6 +102,6 @@ end;
 
 The same script is `demo/oracle/run.sql`. See [`demo/README.md`](../../demo/README.md).
 
-`finish_batch` commits when `p_commit_batch` is true (the default). `finalize` does not. Commit after `finalize` to store the watermark. `p_commit_batch => false` keeps the whole run in one transaction. Capture `sql%rowcount` of the refresh into a variable and pass that; it is not visible inside `finish_batch`.
+`finish_batch` commits when `p_commit_batch` is true (the default). `finalize` does not. Commit after `finalize`. Pass `sql%rowcount` of the refresh as `p_merged`.
 
-`initialize` holds a `DBMS_LOCK` on the owner, target and slice until `finalize`. Grant it once: [deploy.md](deploy.md).
+`initialize` holds a `DBMS_LOCK` until `finalize`. Grant it once: [deploy.md](deploy.md).

@@ -1,7 +1,4 @@
 -- Incremental load of customer_metrics.
--- Capture keys that moved, refresh those keys in batches, then move the watermark.
--- pkg_dwa prints a timing line for each step. set timing on adds the wall time
--- of the whole block.
 
 set serveroutput on size unlimited
 set timing on

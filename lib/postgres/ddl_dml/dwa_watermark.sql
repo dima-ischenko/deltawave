@@ -1,7 +1,4 @@
--- Permanent watermark in the current schema. deploy.sql sets search_path
--- to the install schema before this file runs.
--- On Greenplum the primary key must contain the distribution key, or
--- INSERT ... ON CONFLICT is rejected. target_table is that key.
+-- Permanent watermark. On Greenplum the PK includes the distribution key.
 do $ddl$
 declare
     l_distributed       text := '';
@@ -105,14 +102,14 @@ end
 $ddl$;
 
 comment on table dwa_watermark is
-    'High-water mark of a finished run. dwa_finalize advances it and never moves it backwards.';
+    'High-water mark of a finished run. Never moves backwards.';
 comment on column dwa_watermark.target_owner is
-    'Schema of the target table. Defaults to the current schema when omitted.';
+    'Schema of the target.';
 comment on column dwa_watermark.source_owner is
-    'Schema of the source table. Defaults to the current schema when omitted.';
+    'Schema of the source.';
 comment on column dwa_watermark.data_slice is
     'Independent watermark slice of this target.';
 comment on column dwa_watermark.watermark is
-    'Greatest source value fully applied for this target, slice and source.';
+    'Greatest source value fully applied.';
 comment on column dwa_watermark.updated_at is
     'When dwa_finalize last wrote this row.';

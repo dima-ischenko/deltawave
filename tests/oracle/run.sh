@@ -1,6 +1,5 @@
 #!/bin/sh
-# Load the suite into an Oracle container and run it.
-# The host does not need sqlplus. Override the container when using tests/docker.
+# Run the suite in an Oracle container. Host does not need sqlplus.
 set -eu
 cd "$(dirname "$0")/../.."
 
@@ -14,7 +13,7 @@ docker exec "$container" mkdir -p /tmp/dwa/lib/oracle /tmp/dwa/tests/oracle /tmp
 docker cp lib/oracle/. "$container:/tmp/dwa/lib/oracle"
 docker cp tests/oracle/. "$container:/tmp/dwa/tests/oracle"
 docker cp demo/oracle/. "$container:/tmp/dwa/demo/oracle"
-# DBMS_LOCK grant: SYSTEM has no privilege; / as sysdba is local OS auth.
+# Grant DBMS_LOCK as SYS.
 if [ -n "${ORACLE_SYS_CONNECT:-}" ]; then
     docker exec -w /tmp/dwa "$container" \
         sqlplus -S "$ORACLE_SYS_CONNECT" @lib/oracle/grant_lock.sql "$ora_user"

@@ -1,3 +1,4 @@
+-- Writes watermarks, releases the lock. Does not commit.
 create or replace function dwa_finalize()
 returns void
 language plpgsql

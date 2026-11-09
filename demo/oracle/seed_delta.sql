@@ -1,10 +1,4 @@
--- Delta on top of seed_volume.sql. Does not truncate or reload the base.
---
--- Default: a percentage of the customers already loaded. c_delta_mode is update
--- (only updates), insert (only new customers), or mix (half of each).
--- Run it again to plant another slice. This script does not touch
--- dwa_watermark. If run.sql has already stored one, planted rows get a
--- timestamp after it so the next run.sql captures them.
+-- Delta on top of seed_volume.sql. c_delta_mode: update, insert, or mix.
 
 set serveroutput on size unlimited
 set timing on

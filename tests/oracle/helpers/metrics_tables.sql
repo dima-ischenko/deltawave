@@ -1,4 +1,4 @@
--- Fixture for metrics_* cases. Not the demo playground.
+-- Fixture for metrics_* cases.
 begin execute immediate 'drop table order_items purge'; exception when others then if sqlcode != -942 then raise; end if; end;
 /
 begin execute immediate 'drop table orders purge'; exception when others then if sqlcode != -942 then raise; end if; end;

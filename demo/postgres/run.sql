@@ -1,9 +1,5 @@
 -- Incremental load of customer_metrics.
--- Capture keys that moved, refresh those keys in batches, then move the watermark.
--- dwa prints a notice for each step.
---
--- MERGE needs PostgreSQL 15+. Greenplum has no MERGE: use UPDATE then INSERT,
--- as in lib/postgres/README.md.
+-- MERGE needs PostgreSQL 15+. Greenplum: UPDATE then INSERT.
 
 \timing on
 

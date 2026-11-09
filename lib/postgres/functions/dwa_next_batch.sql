@@ -1,8 +1,4 @@
--- Returns true when a batch is open and its keys are in dwa_batch_tmp.
--- Returns false when no unfinished batch remains.
--- dwa_next_batch, the refresh statement, and dwa_finish_batch stay in one transaction.
--- A commit empties dwa_batch_tmp. If that commit happens before dwa_finish_batch,
--- the open batch's keys are gone and the next call raises DWA-20019.
+-- True while a batch is open in dwa_batch_tmp. Do not commit before dwa_finish_batch.
 create or replace function dwa_next_batch()
 returns boolean
 language plpgsql

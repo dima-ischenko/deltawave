@@ -1,8 +1,4 @@
--- p_sql must contain :since. :data_slice is optional.
--- :since is the stored watermark minus the lookback.
--- The statement must return pk_1 and watermark. pk_2 and pk_3 are optional.
--- p_owner defaults to the current schema. The source must exist and be selectable.
--- p_lookback_hours null takes the value given to dwa_initialize.
+-- Inserts changed keys into dwa_keys_tmp. p_sql must contain :since and return pk_1, watermark.
 create or replace function dwa_capture_delta(
     p_source_table    text,
     p_sql             text,
@@ -53,7 +49,7 @@ begin
     raise exception 'DWA-20006 capture sql is required';
   end if;
 
-  -- \M is the end of a word, so :since2 does not count.
+  -- \M so :since2 does not match.
   select count(*)
   into l_count
   from regexp_matches(lower(p_sql), ':since\M', 'g');

@@ -1,4 +1,4 @@
--- What the last run.sql did. After seed.sql you should see 3 metrics and 3 watermarks.
+-- Result of the last run.sql.
 set pagesize 50
 set linesize 200
 

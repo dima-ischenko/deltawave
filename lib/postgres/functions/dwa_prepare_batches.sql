@@ -1,10 +1,4 @@
--- Batches are optional. Without them the refresh statement reads dwa_keys_tmp.
--- With them: dwa_prepare_batches, then dwa_next_batch / SQL on dwa_batch_tmp / dwa_finish_batch.
--- This function does not commit. Commit after each dwa_finish_batch to keep that
--- batch in the target, and after dwa_finalize to store the watermark. A failed
--- task repeats dwa_initialize, capture, and the batch loop. dwa_next_batch, the
--- refresh statement, and dwa_finish_batch stay in one transaction: dwa_batch_tmp
--- is ON COMMIT DELETE ROWS.
+-- Optional. Then dwa_next_batch / refresh / dwa_finish_batch. Without it, refresh reads dwa_keys_tmp.
 create or replace function dwa_prepare_batches(
     p_batch_size  numeric default 5000
 )

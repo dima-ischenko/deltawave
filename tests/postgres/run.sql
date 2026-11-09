@@ -1,6 +1,4 @@
--- Rebuild into schema lib (not public) and run the checks.
--- From the repository root:
--- psql "postgresql://user:password@localhost:5432/db" -v ON_ERROR_STOP=1 -f tests/postgres/run.sql
+-- Rebuild into schema lib and run the checks.
 
 \set ON_ERROR_STOP on
 \set dwa_schema lib

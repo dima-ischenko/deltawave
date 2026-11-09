@@ -1,4 +1,4 @@
--- Installed library version. Written on the dwa_initialize log line.
+-- Installed library version.
 create or replace function dwa_version()
 returns text
 language sql

@@ -1,4 +1,4 @@
--- Source tables and the target. Run this once, then seed.sql or seed_volume.sql.
+-- Source tables and the target.
 drop table if exists order_items;
 drop table if exists orders;
 drop table if exists customers;

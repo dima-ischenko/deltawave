@@ -1,11 +1,4 @@
--- Large source for run.sql. Edit the three constants, then run tables.sql first.
---
--- Default: 100,000 customers, 1,000,000 orders, 30 items each.
--- Smaller smoke: 1000 / 10000 / 30.
---
--- Source rows keep a fixed base timestamp. This script does not touch
--- dwa_watermark; run.sql writes it after computing customer_metrics.
--- Plant a later slice with seed_delta.sql.
+-- Large source for run.sql. Edit the three constants. tables.sql first.
 
 \timing on
 \set ON_ERROR_STOP on

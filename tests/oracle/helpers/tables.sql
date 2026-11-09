@@ -1,5 +1,4 @@
--- Fixture tables. Named in static SQL inside pkg_dwa_test, so they must
--- exist before that package compiles.
+-- Fixture tables. Create before pkg_dwa_test compiles.
 begin execute immediate 'drop table inc_test_seen purge'; exception when others then if sqlcode != -942 then raise; end if; end;
 /
 begin execute immediate 'drop table inc_test_expect purge'; exception when others then if sqlcode != -942 then raise; end if; end;
@@ -44,7 +43,7 @@ create table inc_test_seen (
     id       varchar2(10) not null
 );
 
--- Open rows (closed_at is null) are recaptured every run. deleted_at is a tombstone.
+-- Open rows are recaptured every run. deleted_at is a tombstone.
 create table inc_test_roll (
     id         varchar2(10) not null,
     amount     number not null,

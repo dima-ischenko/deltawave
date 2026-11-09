@@ -1,4 +1,4 @@
--- Fixture for metrics_* cases. Not the demo playground.
+-- Fixture for metrics_* cases.
 drop table if exists order_items;
 drop table if exists orders;
 drop table if exists customers;

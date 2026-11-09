@@ -2,7 +2,7 @@
 
 [Deploy](deploy.md) into a schema and put that schema on `search_path`. Methods and parameters: [root README](../../README.md). From SQL, call the functions with `select`. From PL/pgSQL, use `perform`.
 
-Without batches, one refresh reads `dwa_keys_tmp`. The table holds only the current run. With batches, each refresh reads `dwa_batch_tmp`. `MERGE` needs PostgreSQL 15+. Greenplum has no `MERGE`: use `UPDATE` then `INSERT`.
+Without batches, one refresh reads `dwa_keys_tmp`. With batches, each refresh reads `dwa_batch_tmp`. `MERGE` needs PostgreSQL 15+. Greenplum has no `MERGE`: use `UPDATE` then `INSERT`.
 
 ```sql
 do $run$
@@ -103,6 +103,6 @@ $run$;
 
 The same script is `demo/postgres/run.sql`. See [`demo/README.md`](../../demo/README.md).
 
-The functions do not commit. Commit after each `dwa_finish_batch` and after `dwa_finalize`. A rollback of `dwa_initialize` drops the session temp tables. The run lock is session-scoped and survives that rollback until `dwa_finalize` or disconnect. Pass `GET DIAGNOSTICS ROW_COUNT` of the refresh; it is not visible inside `dwa_finish_batch`.
+The functions do not commit. Commit after each `dwa_finish_batch` and after `dwa_finalize`. A rollback of `dwa_initialize` drops the session temp tables. Pass `GET DIAGNOSTICS ROW_COUNT` of the refresh as `p_merged`.
 
-On Greenplum 7 the same [deploy](deploy.md) is used. After `UPDATE`/`INSERT` capture `GET DIAGNOSTICS` and pass the sum as `p_merged`.
+On Greenplum 7 use the same [deploy](deploy.md). After `UPDATE`/`INSERT` pass the sum as `p_merged`.

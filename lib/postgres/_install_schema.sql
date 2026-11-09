@@ -1,6 +1,4 @@
--- Pick the schema that deploy.sql and rollback.sql install into.
--- Pass -v dwa_schema=name, or leave it unset to use the session's current schema.
--- The schema must already exist. Start from the repository root.
+-- Pass -v dwa_schema=name, or use the current schema.
 \if :{?dwa_schema}
 set search_path to :"dwa_schema";
 \else

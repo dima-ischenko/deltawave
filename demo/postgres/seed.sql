@@ -1,5 +1,4 @@
--- Three customers, four orders. Enough to read run.sql and see keys move.
--- Each source uses its own timestamp so watermarks stay distinct.
+-- Three customers, four orders.
 truncate table order_items;
 truncate table orders;
 truncate table customers;

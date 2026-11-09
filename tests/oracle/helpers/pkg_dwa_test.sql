@@ -1,4 +1,4 @@
--- Shared fixture helpers. Cases live in tests/oracle/cases/.
+-- Shared fixture helpers.
 create or replace package pkg_dwa_test is
 
     c_target constant varchar2(128) := 'inc_test_tgt';
