@@ -19,7 +19,7 @@ Starts a run and clears `dwa_keys_tmp`. Takes an exclusive session lock on `(own
 
 | Parameter | Required | Default | Effect |
 | --- | --- | --- | --- |
-| `p_target_table` | yes | — | Unqualified target being loaded. |
+| `p_target_table` | yes | - | Unqualified target being loaded. |
 | `p_owner` | no | current schema | Schema of the target. Oracle uses `sys_context('USERENV', 'CURRENT_SCHEMA')`. PostgreSQL resolves an omitted owner from the install schema / `public`. |
 | `p_data_slice` | no | `'all'` | Independent watermark slice of this target. A watermark key, not a relation name. |
 | `p_lookback_hours` | no | `0` | Hours subtracted from the stored watermark when binding `:since`. Not written to `dwa_watermark`. |
@@ -34,8 +34,8 @@ Inserts changed keys into `dwa_keys_tmp`. The source must exist and be selectabl
 
 | Parameter | Required | Default | Effect |
 | --- | --- | --- | --- |
-| `p_source_table` | yes | — | Unqualified source name stored with the watermark. |
-| `p_sql` | yes | — | Must return `pk_1` and `watermark`. `pk_2` and `pk_3` are optional. Must contain `:since`. `:data_slice` is optional; it is the slice given to `initialize`. |
+| `p_source_table` | yes | - | Unqualified source name stored with the watermark. |
+| `p_sql` | yes | - | Must return `pk_1` and `watermark`. `pk_2` and `pk_3` are optional. Must contain `:since`. `:data_slice` is optional; it is the slice given to `initialize`. |
 | `p_owner` | no | current schema | Schema of the source. Same default as `initialize`. |
 | `p_lookback_hours` | no | `null` | Lookback for this source. `null` uses the value from `initialize`. |
 

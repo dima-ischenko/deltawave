@@ -3,10 +3,10 @@
 -- source_owner and source_table stay: finalize advances one watermark per source.
 --
 -- Column order:
---   source_owner, source_table            — watermark grain within the run
---   pk_1, pk_2, pk_3                      — the business key, same order as dwa_batch_tmp
---   watermark                             — the source value of this key
---   batch_no, batch_done                  — progress, null and 0 until prepare_batches
+--   source_owner, source_table            - watermark grain within the run
+--   pk_1, pk_2, pk_3                      - the business key, same order as dwa_batch_tmp
+--   watermark                             - the source value of this key
+--   batch_no, batch_done                  - progress, null and 0 until prepare_batches
 create global temporary table dwa_keys_tmp (
     source_owner    varchar2(128) not null,
     source_table    varchar2(128) not null,
