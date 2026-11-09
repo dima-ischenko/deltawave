@@ -21,7 +21,7 @@ Starts a run and clears `dwa_keys_tmp`. Takes an exclusive session lock on `(own
 | --- | --- | --- | --- |
 | `p_target_table` | yes | — | Unqualified target being loaded. |
 | `p_owner` | no | current schema | Schema of the target. Oracle uses `sys_context('USERENV', 'CURRENT_SCHEMA')`. PostgreSQL resolves an omitted owner from the install schema / `public`. |
-| `p_data_slice` | no | `'all'` | Independent watermark slice of this target. |
+| `p_data_slice` | no | `'all'` | Independent watermark slice of this target. A watermark key, not a relation name. |
 | `p_lookback_hours` | no | `0` | Hours subtracted from the stored watermark when binding `:since`. Not written to `dwa_watermark`. |
 | `p_debug` | no | `false` | Extra diagnostic output on capture and finalize. |
 | `p_log_table` | no | `false` | Write each step to `dwa_log`. `dbms_output` / notices still print. On Oracle the insert is an autonomous transaction, so a rollback of the run keeps the log. PostgreSQL and Greenplum have no analog: the row lives in the caller's transaction. |

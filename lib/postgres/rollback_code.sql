@@ -14,6 +14,7 @@ drop function if exists :"dwa_schema"._dwa_unfinished();
 drop function if exists :"dwa_schema"._dwa_qualify_relation(text, text, text);
 drop function if exists :"dwa_schema"._dwa_assert_relation(text, text);
 drop function if exists :"dwa_schema"._dwa_norm_ident(text, text);
+drop function if exists :"dwa_schema"._dwa_norm_slice(text);
 drop function if exists :"dwa_schema"._dwa_release_run_lock(text, text, text);
 drop function if exists :"dwa_schema"._dwa_acquire_run_lock(text, text, text);
 drop function if exists :"dwa_schema"._dwa_ensure_temp();

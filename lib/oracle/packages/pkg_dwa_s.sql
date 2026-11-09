@@ -4,6 +4,7 @@ create or replace package pkg_dwa is
   -- The target must exist and be selectable by the caller.
   -- p_lookback_hours moves the read bound back by N hours.
   -- Zero uses the stored watermark. The lookback is not written to dwa_watermark.
+  -- p_data_slice is a watermark key, not a relation name. Digits are allowed via char cast('1').
   -- Exclusive named DBMS_LOCK on (owner, target, slice). Another session gets -20021.
   -- The lock survives commit and is released in finalize, or when the session ends.
   -- p_log_table writes each step to dwa_log. Off by default.

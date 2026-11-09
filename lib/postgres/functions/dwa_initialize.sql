@@ -15,7 +15,7 @@ set search_path = pg_temp, :"dwa_schema", public as $$
 declare
 l_owner   text;
 l_target  text;
-l_slice   text := _dwa_norm_ident(p_data_slice, 'data_slice');
+l_slice   text := _dwa_norm_slice(p_data_slice);
 l_lookback    numeric := coalesce(p_lookback_hours, 0);
 l_rows    bigint;
 begin

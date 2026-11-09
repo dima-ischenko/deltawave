@@ -16,7 +16,7 @@ gv_log_table       boolean := false;
 gv_lockhandle      varchar2(128);
 gv_lockname        varchar2(128);
 
-c_version  constant varchar2(32) := '1.0.1';
+c_version  constant varchar2(32) := '1.0.2';
 c_w_proc   constant pls_integer := 26;
 c_w_name   constant pls_integer := 28;
 c_w_date   constant pls_integer := 32;
@@ -294,6 +294,28 @@ begin
 
     return l_name;
 end norm_ident;
+
+-- Slice is a watermark key, not a relation name. Digits are allowed ('1', '101').
+function norm_slice(p_name varchar2) return varchar2 is
+    l_name varchar2(64);
+begin
+    if p_name is null then
+        raise_application_error(-20006, 'data_slice is required');
+    end if;
+
+    l_name := lower(trim(p_name));
+
+    if l_name is null then
+        raise_application_error(-20006, 'data_slice is required');
+    end if;
+
+    if instr(l_name, '.') > 0
+       or not regexp_like(l_name, '^[a-z0-9_#$]+$') then
+        raise_application_error(-20022, 'invalid data_slice ' || p_name);
+    end if;
+
+    return l_name;
+end norm_slice;
 
 function resolve_owner(p_owner varchar2) return varchar2 is
     l_owner varchar2(128);
@@ -698,7 +720,7 @@ procedure initialize(
 begin
     l_owner := resolve_owner(p_owner);
     l_target := norm_ident(p_target_table, 'target_table');
-    l_slice := norm_ident(p_data_slice, 'data_slice');
+    l_slice := norm_slice(p_data_slice);
 
     if nvl(p_lookback_hours, 0) < 0 then
         raise_application_error(-20002, 'lookback_hours must be >= 0');

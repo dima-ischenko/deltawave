@@ -60,6 +60,24 @@ begin
     pkg_dwa_test.eq('slice bind id', l_id, 'a');
     pkg_dwa.finalize;
 
+    pkg_dwa_test.reset;
+    pkg_dwa_test.add_row('inc_test_a', '1', 1, pkg_dwa_test.c_t1);
+    pkg_dwa_test.add_row('inc_test_a', 'b', 1, pkg_dwa_test.c_t1);
+    pkg_dwa.initialize(p_target_table => pkg_dwa_test.c_target, p_data_slice => '1', p_lookback_hours => 0);
+    pkg_dwa.capture_delta(
+        p_source_table => 'inc_test_a',
+        p_sql => q'[
+            select id as pk_1, updated_at as watermark
+            from inc_test_a
+            where id = :data_slice
+              and updated_at > :since
+        ]'
+    );
+    pkg_dwa_test.eq('numeric slice keys', pkg_dwa_test.key_count, '1');
+    select pk_1 into l_id from dwa_keys_tmp;
+    pkg_dwa_test.eq('numeric slice id', l_id, '1');
+    pkg_dwa.finalize;
+
     pkg_dwa_test.pass('capture_placeholders');
 end;
 /

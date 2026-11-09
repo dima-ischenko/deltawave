@@ -57,6 +57,24 @@ begin
     call dwa_test.eq('slice bind id', l_id, 'a');
     perform dwa_finalize();
 
+    call dwa_test.reset();
+    call dwa_test.add_row('inc_test_a', '1', 1, c_t1);
+    call dwa_test.add_row('inc_test_a', 'b', 1, c_t1);
+    perform dwa_initialize(p_target_table => 'inc_test_tgt', p_data_slice => '1', p_lookback_hours => 0);
+    perform dwa_capture_delta(
+        p_source_table => 'inc_test_a',
+        p_sql => $sql$
+            select id as pk_1, updated_at as watermark
+            from inc_test_a
+            where id = :data_slice
+              and updated_at > :since
+        $sql$
+    );
+    call dwa_test.eq('numeric slice keys', dwa_test.key_count(), '1');
+    select pk_1 into l_id from dwa_keys_tmp;
+    call dwa_test.eq('numeric slice id', l_id, '1');
+    perform dwa_finalize();
+
     call dwa_test.pass('capture_placeholders');
 end;
 $$;
