@@ -140,8 +140,8 @@ Set the tombstone and a watermark together (`deleted_at`) and return that column
 Open rows (`closed_at` / `date_to` is null) must be selected even when their watermark is older than `:since`:
 
 ```sql
-where deleted_at is null
-  and (updated_at > :since or closed_at is null)
+where updated_at > :since
+   or closed_at is null
 ```
 
 Return the row's real source watermark. `finalize` never moves a stored watermark backwards, so open keys do not pull it back.
