@@ -1,5 +1,5 @@
 -- Shared fixture helpers.
-create schema if not exists dwa_test;
+create schema  dwa_test;
 
 create or replace procedure dwa_test.fail(p_test text, p_detail text)
 language plpgsql as $$

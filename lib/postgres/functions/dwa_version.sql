@@ -3,5 +3,5 @@ create or replace function dwa_version()
 returns text
 language sql
 immutable as $$
-  select '1.0.4';
+  select '1.0.5'::text;
 $$;

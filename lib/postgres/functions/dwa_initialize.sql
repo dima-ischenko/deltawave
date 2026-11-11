@@ -27,23 +27,14 @@ begin
 
   perform _dwa_ensure_temp();
 
+  delete from dwa_session_tmp where id = 1;
   insert into dwa_session_tmp (
     id, target_owner, target_table, data_slice, lookback_hours,
     batch_no, batch_size, batches_ready, debug, log_table
   ) values (
     1, l_owner, l_target, l_slice, l_lookback,
     null, null, false, p_debug is true, p_log_table is true
-  )
-  on conflict (id) do update set
-    target_owner = excluded.target_owner,
-    target_table = excluded.target_table,
-    data_slice = excluded.data_slice,
-    lookback_hours = excluded.lookback_hours,
-    batch_no = null,
-    batch_size = null,
-    batches_ready = false,
-    debug = excluded.debug,
-    log_table = excluded.log_table;
+  );
 
   perform _dwa_acquire_run_lock(l_owner, l_target, l_slice);
 

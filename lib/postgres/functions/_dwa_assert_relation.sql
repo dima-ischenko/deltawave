@@ -6,7 +6,15 @@ set search_path = pg_catalog, :"dwa_schema" as $$
 declare
 l_reg regclass;
 begin
-  l_reg := to_regclass(format('%I.%I', p_owner, p_table));
+  -- to_regclass(text) is PG 9.5+; GP6 / PG 9.4 only has to_regclass(cstring).
+  select c.oid
+  into l_reg
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = p_owner
+    and c.relname = p_table
+    and c.relkind in ('r', 'p', 'v', 'm', 'f');
+
   if l_reg is null then
     raise exception
       'DWA-20022 table %.% does not exist or is not available',

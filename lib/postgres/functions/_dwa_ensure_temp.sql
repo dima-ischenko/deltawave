@@ -33,21 +33,23 @@ begin
     drop table dwa_session_tmp;
   end if;
 
-  execute format($sql$
-    create temp table if not exists dwa_session_tmp (
-      id              int primary key,
-      target_owner    text,
-      target_table    text,
-      data_slice      text,
-      lookback_hours  numeric,
-      batch_no        numeric,
-      batch_size      numeric,
-      batches_ready   boolean,
-      debug           boolean not null default false,
-      log_table       boolean not null default false,
-      constraint ck_dwa_session_tmp_id check (id = 1)
-    ) on commit preserve rows%s
-  $sql$, l_by_id);
+  if to_regclass('dwa_session_tmp') is null then
+    execute format($sql$
+      create temp table dwa_session_tmp (
+        id              int primary key,
+        target_owner    text,
+        target_table    text,
+        data_slice      text,
+        lookback_hours  numeric,
+        batch_no        numeric,
+        batch_size      numeric,
+        batches_ready   boolean,
+        debug           boolean not null default false,
+        log_table       boolean not null default false,
+        constraint ck_dwa_session_tmp_id check (id = 1)
+      ) on commit preserve rows%s
+    $sql$, l_by_id);
+  end if;
 
   if to_regclass('dwa_session_tmp') is not null
    and not exists (
@@ -82,29 +84,35 @@ begin
     drop table dwa_keys_tmp;
   end if;
 
-  execute format($sql$
-    create temp table if not exists dwa_keys_tmp (
-      source_owner    text        not null,
-      source_table    text        not null,
-      pk_1            text        not null,
-      pk_2            text,
-      pk_3            text,
-      watermark       timestamp   not null,
-      batch_no        numeric,
-      batch_done      smallint    not null default 0,
-      constraint ck_dwa_keys_tmp_done check (batch_done in (0, 1))
-    ) on commit preserve rows%s
-  $sql$, l_by_pk);
+  if to_regclass('dwa_keys_tmp') is null then
+    execute format($sql$
+      create temp table dwa_keys_tmp (
+        source_owner    text        not null,
+        source_table    text        not null,
+        pk_1            text        not null,
+        pk_2            text,
+        pk_3            text,
+        watermark       timestamp   not null,
+        batch_no        numeric,
+        batch_done      smallint    not null default 0,
+        constraint ck_dwa_keys_tmp_done check (batch_done in (0, 1))
+      ) on commit preserve rows%s
+    $sql$, l_by_pk);
+  end if;
 
-  execute format($sql$
-    create temp table if not exists dwa_batch_tmp (
-      pk_1            text        not null,
-      pk_2            text,
-      pk_3            text
-    ) on commit delete rows%s
-  $sql$, l_by_pk);
+  if to_regclass('dwa_batch_tmp') is null then
+    execute format($sql$
+      create temp table dwa_batch_tmp (
+        pk_1            text        not null,
+        pk_2            text,
+        pk_3            text
+      ) on commit delete rows%s
+    $sql$, l_by_pk);
+  end if;
 
-  create index if not exists idx_dwa_keys_tmp_batch
+  -- GP6 / PG 9.4: no CREATE INDEX IF NOT EXISTS.
+  drop index if exists idx_dwa_keys_tmp_batch;
+  create index idx_dwa_keys_tmp_batch
     on dwa_keys_tmp (batch_no, batch_done);
 end;
 $$;
