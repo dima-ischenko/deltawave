@@ -1,5 +1,4 @@
 ------- functions
-\i lib/postgres/functions/_dwa_ensure_temp.sql
 \i lib/postgres/functions/_dwa_norm_ident.sql
 \i lib/postgres/functions/_dwa_norm_slice.sql
 \i lib/postgres/functions/_dwa_assert_relation.sql
