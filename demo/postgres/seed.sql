@@ -1,3 +1,7 @@
+\if :{?dwa_schema}
+set search_path to :"dwa_schema", "$user", public;
+\endif
+
 -- Three customers, four orders.
 truncate table order_items;
 truncate table orders;

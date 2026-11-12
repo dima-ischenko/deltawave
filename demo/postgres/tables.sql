@@ -1,3 +1,7 @@
+\if :{?dwa_schema}
+set search_path to :"dwa_schema", "$user", public;
+\endif
+
 -- Source tables and the target.
 drop table if exists order_items;
 drop table if exists orders;

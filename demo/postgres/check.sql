@@ -1,3 +1,8 @@
+\if :{?dwa_schema}
+set search_path to :"dwa_schema", "$user", public;
+\endif
+
+
 -- Result of the last run.sql.
 select (select count(*) from customers) as customers,
        (select count(*) from orders) as orders,

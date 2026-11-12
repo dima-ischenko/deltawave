@@ -3,6 +3,12 @@
 \timing on
 \set ON_ERROR_STOP on
 
+\if :{?dwa_schema}
+set search_path to :"dwa_schema", "$user", public;
+\endif
+
+
+
 do $seed$
 declare
     c_delta_pct integer := 10;

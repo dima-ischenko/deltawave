@@ -1,3 +1,8 @@
+\if :{?dwa_schema}
+set search_path to :"dwa_schema", "$user", public;
+\endif
+
+
 create index ix_customers_updated on customers (updated_at);
 create index ix_orders_customer on orders (customer_id);
 create index ix_orders_updated on orders (updated_at);

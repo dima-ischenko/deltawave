@@ -3,6 +3,10 @@
 \timing on
 \set ON_ERROR_STOP on
 
+\if :{?dwa_schema}
+set search_path to :"dwa_schema", "$user", public;
+\endif
+
 drop index if exists ix_customers_updated;
 drop index if exists ix_orders_customer;
 drop index if exists ix_orders_updated;
