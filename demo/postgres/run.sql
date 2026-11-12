@@ -1,7 +1,12 @@
 -- Incremental load of customer_metrics.
--- MERGE needs PostgreSQL 15+. Greenplum: UPDATE then INSERT.
+-- DELETE then INSERT: works on PostgreSQL 9.4+ and Greenplum 6/7 (no MERGE).
+-- Pass -v dwa_schema=name, or set search_path to the install schema first.
 
 \timing on
+
+\if :{?dwa_schema}
+set search_path to :"dwa_schema", "$user", public;
+\endif
 
 do $run$
 declare
@@ -9,34 +14,34 @@ declare
     v_merged bigint;
 begin
     perform dwa_initialize(
-        p_target_table => 'customer_metrics',
-        p_data_slice => 'all'
+        p_target_table := 'customer_metrics'::text,
+        p_data_slice := 'all'::text
     );
 
     perform dwa_capture_delta(
-        p_source_table => 'customers',
-        p_sql => $sql$
+        p_source_table := 'customers'::text,
+        p_sql := $sql$
             select id::text as pk_1,
                    updated_at as watermark
             from customers
             where updated_at > :since
-        $sql$
+        $sql$::text
     );
 
     perform dwa_capture_delta(
-        p_source_table => 'orders',
-        p_sql => $sql$
+        p_source_table := 'orders'::text,
+        p_sql := $sql$
             select customer_id::text as pk_1,
                    max(updated_at) as watermark
             from orders
             where updated_at > :since
             group by customer_id
-        $sql$
+        $sql$::text
     );
 
     perform dwa_capture_delta(
-        p_source_table => 'order_items',
-        p_sql => $sql$
+        p_source_table := 'order_items'::text,
+        p_sql := $sql$
             with changed_items as (
                 select order_id, updated_at
                 from order_items
@@ -47,60 +52,49 @@ begin
             from changed_items ci
             join orders o on o.id = ci.order_id
             group by o.customer_id
-        $sql$
+        $sql$::text
     );
 
-    perform dwa_prepare_batches(p_batch_size => 5000);
+    perform dwa_prepare_batches(p_batch_size := 5000::numeric);
 
     while dwa_next_batch() loop
-        merge into customer_metrics t
+        delete from customer_metrics t
         using (
-            with changed as (
-                select pk_1::integer as customer_id
-                from dwa_batch_tmp
-                group by pk_1
-            ),
-            order_amount as (
-                select c.id as customer_id,
-                       o.id as order_id,
-                       o.order_date,
-                       o.status,
-                       round(oi.quantity * oi.price * (1 - o.order_discount), 2) as amount
-                from customers c
-                join changed ch on ch.customer_id = c.id
-                join orders o on o.customer_id = c.id
-                join order_items oi on oi.order_id = o.id
-            )
-            select customer_id,
-                   min(amount) as min_amount,
-                   max(amount) as max_amount,
-                   round(avg(amount), 2) as avg_amount,
-                   (array_agg(order_id order by order_date desc, order_id desc))[1] as last_order_id,
-                   count(*) filter (where status = 'completed') as cnt_completed
-            from order_amount
-            group by customer_id
+            select pk_1::integer as customer_id
+            from dwa_batch_tmp
+            group by pk_1
         ) s
-        on t.customer_id = s.customer_id
-        when matched and (
-            case when t.min_amount is not distinct from s.min_amount then 0 else 1 end
-            + case when t.max_amount is not distinct from s.max_amount then 0 else 1 end
-            + case when t.avg_amount is not distinct from s.avg_amount then 0 else 1 end
-            + case when t.last_order_id is not distinct from s.last_order_id then 0 else 1 end
-            + case when t.cnt_completed is not distinct from s.cnt_completed then 0 else 1 end
-        ) > 0 then update set
-            min_amount     = s.min_amount,
-            max_amount     = s.max_amount,
-            avg_amount     = s.avg_amount,
-            last_order_id  = s.last_order_id,
-            cnt_completed  = s.cnt_completed,
-            mt_change_date = v_change_date
-        when not matched then insert (
+        where t.customer_id = s.customer_id;
+
+        insert into customer_metrics (
             customer_id, min_amount, max_amount, avg_amount,
             last_order_id, cnt_completed, mt_change_date
-        ) values (
-            s.customer_id, s.min_amount, s.max_amount, s.avg_amount,
-            s.last_order_id, s.cnt_completed, v_change_date
-        );
+        )
+        with changed as (
+            select pk_1::integer as customer_id
+            from dwa_batch_tmp
+            group by pk_1
+        ),
+        order_amount as (
+            select c.id as customer_id,
+                   o.id as order_id,
+                   o.order_date,
+                   o.status,
+                   round(oi.quantity * oi.price * (1 - o.order_discount), 2) as amount
+            from customers c
+            join changed ch on ch.customer_id = c.id
+            join orders o on o.customer_id = c.id
+            join order_items oi on oi.order_id = o.id
+        )
+        select customer_id,
+               min(amount) as min_amount,
+               max(amount) as max_amount,
+               round(avg(amount), 2) as avg_amount,
+               (array_agg(order_id order by order_date desc, order_id desc))[1] as last_order_id,
+               count(case when status = 'completed' then 1 end) as cnt_completed,
+               v_change_date
+        from order_amount
+        group by customer_id;
 
         get diagnostics v_merged = row_count;
         perform dwa_finish_batch(v_merged);

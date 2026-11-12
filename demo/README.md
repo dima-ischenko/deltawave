@@ -47,14 +47,13 @@ sqlplus test/test_pass@//localhost:1522/FREEPDB1
 
 ## PostgreSQL
 
-Put the install schema on `search_path`. After `lib/postgres/deploy.sql` that schema is `lib` unless you passed `dwa_schema`.
+Put the install schema on `search_path`, or pass `-v dwa_schema=name` (same as [deploy](../lib/postgres/deploy.md)). After `lib/postgres/deploy.sql` that schema is `lib` unless you passed `dwa_schema`. `run.sql` prepends `dwa_schema` to `search_path` when the variable is set.
 
 ```text
-psql "postgresql://user:password@localhost:5432/db"
+psql "postgresql://user:password@localhost:5432/db" -v dwa_schema=lib
 ```
 
 ```sql
-set search_path to lib, public;
 \i demo/postgres/tables.sql
 \i demo/postgres/seed.sql
 \i demo/postgres/run.sql
