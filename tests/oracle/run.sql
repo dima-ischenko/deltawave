@@ -70,6 +70,7 @@ where target_table = 'customer_metrics';
 declare
     l_metrics number;
     l_wm      number;
+    l_ok      number;
 begin
     select count(*) into l_metrics from customer_metrics;
     select count(*)
@@ -83,6 +84,23 @@ begin
     end if;
     if l_wm != 3 then
         raise_application_error(-20000, 'demo watermarks=' || l_wm || ', expected 3');
+    end if;
+
+    select count(*)
+    into l_ok
+    from customer_metrics
+    where (customer_id = 1 and min_amount = 45 and max_amount = 50
+           and avg_amount = 47.5 and sum_amount = 95
+           and last_order_id = 102 and cnt_completed = 2)
+       or (customer_id = 2 and min_amount = 100 and max_amount = 100
+           and avg_amount = 100 and sum_amount = 100
+           and last_order_id = 201 and cnt_completed = 0)
+       or (customer_id = 3 and min_amount = 21 and max_amount = 21
+           and avg_amount = 21 and sum_amount = 21
+           and last_order_id = 301 and cnt_completed = 1);
+
+    if l_ok != 3 then
+        raise_application_error(-20000, 'demo metric values mismatch, matched=' || l_ok);
     end if;
 
     dbms_output.put_line('demo: passed');

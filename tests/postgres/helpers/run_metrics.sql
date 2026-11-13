@@ -7,6 +7,7 @@ create table customer_metrics_inc (
     min_amount    numeric,
     max_amount    numeric,
     avg_amount    numeric,
+    sum_amount    numeric,
     last_order_id integer,
     cnt_completed numeric
 );
@@ -166,16 +167,18 @@ begin
                        o.id as order_id,
                        o.order_date,
                        o.status,
-                       round(oi.quantity * oi.price * (1 - o.order_discount), 2) as amount
+                       sum(round(oi.quantity * oi.price * (1 - o.order_discount), 2)) as amount
                 from customers c
                 join changed ch on ch.customer_id = c.id
-                join orders o on o.customer_id = c.id
-                join order_items oi on oi.order_id = o.id
+                left join orders o on o.customer_id = c.id
+                left join order_items oi on oi.order_id = o.id
+                group by c.id, o.id, o.order_date, o.status
             )
             select customer_id,
                    min(amount) as min_amount,
                    max(amount) as max_amount,
                    round(avg(amount), 2) as avg_amount,
+                   sum(amount) as sum_amount,
                    (array_agg(order_id order by order_date desc, order_id desc))[1] as last_order_id,
                    count(*) filter (where status = 'completed') as cnt_completed
             from order_amount
@@ -186,20 +189,22 @@ begin
             case when t.min_amount is not distinct from s.min_amount then 0 else 1 end
             + case when t.max_amount is not distinct from s.max_amount then 0 else 1 end
             + case when t.avg_amount is not distinct from s.avg_amount then 0 else 1 end
+            + case when t.sum_amount is not distinct from s.sum_amount then 0 else 1 end
             + case when t.last_order_id is not distinct from s.last_order_id then 0 else 1 end
             + case when t.cnt_completed is not distinct from s.cnt_completed then 0 else 1 end
         ) > 0 then update set
             min_amount     = s.min_amount,
             max_amount     = s.max_amount,
             avg_amount     = s.avg_amount,
+            sum_amount     = s.sum_amount,
             last_order_id  = s.last_order_id,
             cnt_completed  = s.cnt_completed,
             mt_change_date = v_change_date
         when not matched then insert (
-            customer_id, min_amount, max_amount, avg_amount,
+            customer_id, min_amount, max_amount, avg_amount, sum_amount,
             last_order_id, cnt_completed, mt_change_date
         ) values (
-            s.customer_id, s.min_amount, s.max_amount, s.avg_amount,
+            s.customer_id, s.min_amount, s.max_amount, s.avg_amount, s.sum_amount,
             s.last_order_id, s.cnt_completed, v_change_date
         );
 
@@ -220,16 +225,18 @@ begin
                            o.id as order_id,
                            o.order_date,
                            o.status,
-                           round(oi.quantity * oi.price * (1 - o.order_discount), 2) as amount
+                           sum(round(oi.quantity * oi.price * (1 - o.order_discount), 2)) as amount
                     from customers c
                     join changed ch on ch.customer_id = c.id
-                    join orders o on o.customer_id = c.id
-                    join order_items oi on oi.order_id = o.id
+                    left join orders o on o.customer_id = c.id
+                    left join order_items oi on oi.order_id = o.id
+                    group by c.id, o.id, o.order_date, o.status
                 )
                 select customer_id,
                        min(amount) as min_amount,
                        max(amount) as max_amount,
                        round(avg(amount), 2) as avg_amount,
+                       sum(amount) as sum_amount,
                        (array_agg(order_id order by order_date desc, order_id desc))[1] as last_order_id,
                        count(*) filter (where status = 'completed') as cnt_completed
                 from order_amount
@@ -240,20 +247,22 @@ begin
                 case when t.min_amount is not distinct from s.min_amount then 0 else 1 end
                 + case when t.max_amount is not distinct from s.max_amount then 0 else 1 end
                 + case when t.avg_amount is not distinct from s.avg_amount then 0 else 1 end
+                + case when t.sum_amount is not distinct from s.sum_amount then 0 else 1 end
                 + case when t.last_order_id is not distinct from s.last_order_id then 0 else 1 end
                 + case when t.cnt_completed is not distinct from s.cnt_completed then 0 else 1 end
             ) > 0 then update set
                 min_amount     = s.min_amount,
                 max_amount     = s.max_amount,
                 avg_amount     = s.avg_amount,
+                sum_amount     = s.sum_amount,
                 last_order_id  = s.last_order_id,
                 cnt_completed  = s.cnt_completed,
                 mt_change_date = v_change_date
             when not matched then insert (
-                customer_id, min_amount, max_amount, avg_amount,
+                customer_id, min_amount, max_amount, avg_amount, sum_amount,
                 last_order_id, cnt_completed, mt_change_date
             ) values (
-                s.customer_id, s.min_amount, s.max_amount, s.avg_amount,
+                s.customer_id, s.min_amount, s.max_amount, s.avg_amount, s.sum_amount,
                 s.last_order_id, s.cnt_completed, v_change_date
             );
 
@@ -283,9 +292,11 @@ language plpgsql as $$
 begin
     delete from customer_metrics_inc;
     insert into customer_metrics_inc (
-        customer_id, min_amount, max_amount, avg_amount, last_order_id, cnt_completed
+        customer_id, min_amount, max_amount, avg_amount, sum_amount,
+        last_order_id, cnt_completed
     )
-    select customer_id, min_amount, max_amount, avg_amount, last_order_id, cnt_completed
+    select customer_id, min_amount, max_amount, avg_amount, sum_amount,
+           last_order_id, cnt_completed
     from customer_metrics;
 
     if p_reset then
@@ -301,16 +312,20 @@ returns integer
 language sql stable as $$
     select count(*)::integer
     from (
-        (select customer_id, min_amount, max_amount, avg_amount, last_order_id, cnt_completed
+        (select customer_id, min_amount, max_amount, avg_amount, sum_amount,
+                last_order_id, cnt_completed
          from customer_metrics
          except
-         select customer_id, min_amount, max_amount, avg_amount, last_order_id, cnt_completed
+         select customer_id, min_amount, max_amount, avg_amount, sum_amount,
+                last_order_id, cnt_completed
          from customer_metrics_inc)
         union all
-        (select customer_id, min_amount, max_amount, avg_amount, last_order_id, cnt_completed
+        (select customer_id, min_amount, max_amount, avg_amount, sum_amount,
+                last_order_id, cnt_completed
          from customer_metrics_inc
          except
-         select customer_id, min_amount, max_amount, avg_amount, last_order_id, cnt_completed
+         select customer_id, min_amount, max_amount, avg_amount, sum_amount,
+                last_order_id, cnt_completed
          from customer_metrics)
     ) d;
 $$;

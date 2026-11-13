@@ -52,7 +52,7 @@ begin
         where t.customer_id = s.customer_id;
 
         insert into customer_metrics (
-            customer_id, min_amount, max_amount, avg_amount,
+            customer_id, min_amount, max_amount, avg_amount, sum_amount,
             last_order_id, cnt_completed, mt_change_date
         )
         with changed as (
@@ -65,16 +65,18 @@ begin
                    o.id as order_id,
                    o.order_date,
                    o.status,
-                   round(oi.quantity * oi.price * (1 - o.order_discount), 2) as amount
+                   sum(round(oi.quantity * oi.price * (1 - o.order_discount), 2)) as amount
             from customers c
             join changed ch on ch.customer_id = c.id
-            join orders o on o.customer_id = c.id
-            join order_items oi on oi.order_id = o.id
+            left join orders o on o.customer_id = c.id
+            left join order_items oi on oi.order_id = o.id
+            group by c.id, o.id, o.order_date, o.status
         )
         select customer_id,
                min(amount) as min_amount,
                max(amount) as max_amount,
                round(avg(amount), 2) as avg_amount,
+               sum(amount) as sum_amount,
                (array_agg(order_id order by order_date desc, order_id desc))[1] as last_order_id,
                count(case when status = 'completed' then 1 end) as cnt_completed,
                v_change_date

@@ -35,6 +35,7 @@ create table customer_metrics (
     min_amount     numeric,
     max_amount     numeric,
     avg_amount     numeric,
+    sum_amount     numeric,
     last_order_id  integer,
     cnt_completed  numeric,
     mt_change_date timestamp

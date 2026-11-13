@@ -65,16 +65,18 @@ begin
                            o.id as order_id,
                            o.order_date,
                            o.status,
-                           round(oi.quantity * oi.price * (1 - o.order_discount), 2) as amount
+                           sum(round(oi.quantity * oi.price * (1 - o.order_discount), 2)) as amount
                     from customers c
                     join changed ch on ch.customer_id = c.id
-                    join orders o on o.customer_id = c.id
-                    join order_items oi on oi.order_id = o.id
+                    left join orders o on o.customer_id = c.id
+                    left join order_items oi on oi.order_id = o.id
+                    group by c.id, o.id, o.order_date, o.status
                 )
                 select customer_id,
                        min(amount) as min_amount,
                        max(amount) as max_amount,
                        round(avg(amount), 2) as avg_amount,
+                       sum(amount) as sum_amount,
                        max(order_id) keep (dense_rank last order by order_date) as last_order_id,
                        count(case when status = 'completed' then 1 end) as cnt_completed
                 from order_amount
@@ -85,20 +87,22 @@ begin
                 t.min_amount     = s.min_amount,
                 t.max_amount     = s.max_amount,
                 t.avg_amount     = s.avg_amount,
+                t.sum_amount     = s.sum_amount,
                 t.last_order_id  = s.last_order_id,
                 t.cnt_completed  = s.cnt_completed,
                 t.mt_change_date = l_change_date
             where (decode(t.min_amount, s.min_amount, 0, 1) +
                    decode(t.max_amount, s.max_amount, 0, 1) +
                    decode(t.avg_amount, s.avg_amount, 0, 1) +
+                   decode(t.sum_amount, s.sum_amount, 0, 1) +
                    decode(t.last_order_id, s.last_order_id, 0, 1) +
                    decode(t.cnt_completed, s.cnt_completed, 0, 1)
                   ) > 0
             when not matched then insert (
-                customer_id, min_amount, max_amount, avg_amount,
+                customer_id, min_amount, max_amount, avg_amount, sum_amount,
                 last_order_id, cnt_completed, mt_change_date
             ) values (
-                s.customer_id, s.min_amount, s.max_amount, s.avg_amount,
+                s.customer_id, s.min_amount, s.max_amount, s.avg_amount, s.sum_amount,
                 s.last_order_id, s.cnt_completed, l_change_date
             );
 
